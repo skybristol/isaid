@@ -1,9 +1,6 @@
 from flask import Flask
 
-from json2html import *
-import pylinkedcmd
-
-cmd_isaid = pylinkedcmd.pylinkedcmd.Isaid()
+import requests
 
 app = Flask(__name__)
 
@@ -12,7 +9,3 @@ app = Flask(__name__)
 def hello_world():
     return "iSAID"
 
-@app.route("/orgs")
-def get_orgs():
-    orgs = cmd_isaid.get_organizations()
-    return json2html.convert(json=orgs)
