@@ -7,6 +7,10 @@ app = Flask(__name__)
 def home():
     return render_template("home.html")
 
+@app.route("/about")
+def about():
+    return render_template("about.html")
+
 @app.route("/person/<person_id>", methods=['GET'])
 def lookup_person(person_id):
     query_parameter = lookup_parameter_person(person_id)
