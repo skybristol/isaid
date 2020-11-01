@@ -1,17 +1,18 @@
-from flask import Flask
+from flask import Flask, Markup
 from flask import render_template
+import os
 import validators
 import re
 from urllib.parse import urlparse
 import requests
-from json2html import *
+import pandas as pd
 
 app = Flask(__name__)
 
 
 @app.route("/")
-def hello_world():
-    return render_template("index.html")
+def home():
+    return render_template("home.html")
 
 @app.route("/person/<person_id>", methods=['GET'])
 def lookup_person(person_id):
@@ -26,12 +27,49 @@ def lookup_person(person_id):
             return "Unparseable ID"
 
     search_result = assemble_person_record(parameter_name=query_parameter, parameter_value=person_id)
-    #return search_result
-    return json2html.convert(json=search_result)
+
+    directory_header = "<h2>Directory/Contact Information</h2>"
+
+    directory_table = pd.DataFrame(search_result["directory"])[[
+            "displayname",
+            "jobtitle",
+            "url",
+            "organization_name",
+            "organization_url",
+            "region",
+            "city",
+            "state"
+    ]].transpose().to_html(
+        render_links=True,
+        header=False,
+        na_rep="NA",
+        justify="left"
+    )
+
+    asset_header = "<h2>Publications and Other Assets</h2>"
+
+    asset_table = pd.DataFrame(search_result["assets"])[[
+        "additionaltype",
+        "contact_type",
+        "contact_role",
+        "name",
+        "datepublished",
+        "url"
+    ]].sort_values(
+        by="datepublished",
+        ascending=False
+    ).to_html(
+        render_links=True,
+        na_rep="NA",
+        justify="left",
+        index=False
+    )
+
+    person_content = Markup(directory_header + directory_table + asset_header + asset_table)
+
+    return render_template("person.html", html_content=person_content)
 
 
-isaid_api = "https://kickasslabs.xyz/v1/graphql"
-api_headers = {"content-type": "application/json"}
 isaid_data_collections = {
     "directory": {
         "title": "Directory",
@@ -61,12 +99,12 @@ isaid_data_collections = {
 
 def execute_query(query, api=None):
     if api is None:
-        api = isaid_api
+        api = os.getenv("ISAID_API")
 
     r = requests.post(
         api,
         json={"query": query},
-        headers=api_headers,
+        headers={"content-type": "application/json"},
         verify=False
     )
 
