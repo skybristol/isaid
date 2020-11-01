@@ -28,9 +28,18 @@ def lookup_person(person_id):
 
     search_result = assemble_person_record(parameter_name=query_parameter, parameter_value=person_id)
 
-    directory_header = "<h2>Directory/Contact Information</h2>"
+    person_content = str()
+    for data_section in ["directory", "assets"]:
+        person_content = person_content + package_html(data_section, search_result)
 
-    directory_table = pd.DataFrame(search_result["directory"])[[
+    return render_template("person.html", html_content=person_content)
+
+
+isaid_data_collections = {
+    "directory": {
+        "title": "Directory/Contact Information",
+        "description": "Properties pulled from the ScienceBase Directory for USGS employees and other people",
+        "display_properties": [
             "displayname",
             "jobtitle",
             "url",
@@ -39,49 +48,27 @@ def lookup_person(person_id):
             "region",
             "city",
             "state"
-    ]].transpose().to_html(
-        render_links=True,
-        header=False,
-        na_rep="NA",
-        justify="left"
-    )
-
-    asset_header = "<h2>Publications and Other Assets</h2>"
-
-    asset_table = pd.DataFrame(search_result["assets"])[[
-        "additionaltype",
-        "contact_type",
-        "contact_role",
-        "name",
-        "datepublished",
-        "url"
-    ]].sort_values(
-        by="datepublished",
-        ascending=False
-    ).to_html(
-        render_links=True,
-        na_rep="NA",
-        justify="left",
-        index=False
-    )
-
-    person_content = Markup(directory_header + directory_table + asset_header + asset_table)
-
-    return render_template("person.html", html_content=person_content)
-
-
-isaid_data_collections = {
-    "directory": {
-        "title": "Directory",
-        "description": "Properties pulled from the ScienceBase Directory for USGS employees and other people"
+        ],
+        "display_transpose": True,
+        "sort_by": None
     },
     "assets": {
-        "title": "Assets",
+        "title": "Publications and Other Assets",
         "description": "Scientific assets such as publications, datasets, models, instruments, and "
-                        "other articles. Linked to people through roles such as author/creator."
+                        "other articles. Linked to people through roles such as author/creator.",
+        "display_properties": [
+            "additionaltype",
+            "contact_type",
+            "contact_role",
+            "name",
+            "datepublished",
+            "url"
+        ],
+        "display_transpose": False,
+        "sort_by": "datepublished"
     },
     "claims": {
-        "title": "Claims",
+        "title": "Statements About a Person",
         "description": "Statements or assertions about a person or asset that characterize the entities in "
                         "various ways, including the connections between entities."
     },
@@ -91,11 +78,47 @@ isaid_data_collections = {
     },
     "wikidata_claims": {
         "title": "WikiData Claims",
-        "descriptions": "Statements or assertions about a person or other entity in WikiData that characterize "
+        "description": "Statements or assertions about a person or other entity in WikiData that characterize "
                         "them in various ways, including the connections between entities."
     }
 }
 
+def package_html(collection, isaid_content, include_title=True, include_description=True, markup=True):
+    index_in_html=False
+    header_in_html=True
+
+    df = pd.DataFrame(isaid_content[collection])[isaid_data_collections[collection]["display_properties"]]
+    if isaid_data_collections[collection]["display_transpose"]:
+        index_in_html=True
+        header_in_html=False
+        df = df.transpose()
+    
+    if isaid_data_collections[collection]["sort_by"] is not None:
+        df = df.sort_values(
+            by=isaid_data_collections[collection]["sort_by"],
+            ascending=False
+        )
+    
+    html_content = str()
+
+    if include_title:
+        html_content = html_content + f"<h2>{isaid_data_collections[collection]['title']}</h2>"
+
+    if include_description:
+        html_content = html_content + f"<div class='container'>{isaid_data_collections[collection]['description']}</div>"
+
+    html_content = html_content + df.to_html(
+        render_links=True,
+        na_rep="NA",
+        justify="left",
+        header=header_in_html,
+        index=index_in_html
+    )
+
+    if markup:
+        html_content = Markup(html_content)
+
+    return html_content
 
 def execute_query(query, api=None):
     if api is None:
