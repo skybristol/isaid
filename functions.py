@@ -6,6 +6,7 @@ import pandas as pd
 import psycopg2
 from flask import Markup
 
+'''
 conn = psycopg2.connect(
     host=os.getenv("HOSTNAME"),
     port=os.getenv("PORT"),
@@ -13,6 +14,7 @@ conn = psycopg2.connect(
     password=os.getenv("PASSWORD"),
     dbname=os.getenv("DATABASE")
 )
+'''
 
 isaid_data_collections = {
     "directory": {
@@ -90,7 +92,7 @@ def lookup_parameter_person(person_id):
     
     return query_parameter
 
-def get_data(collection, query_param, query_param_value, target_output="json"):
+def get_data(collection, query_param, query_param_value, db_con, target_output="json"):
     selection_properties = {
         "table_name": isaid_data_collections[collection]["table_name"],
         "query_param": query_param,
@@ -108,18 +110,19 @@ def get_data(collection, query_param, query_param_value, target_output="json"):
         WHERE %(query_param)s = '%(query_param_value)s'
     ''' % selection_properties
     
-    df = pd.read_sql_query(sql, con=conn)
+    df = pd.read_sql_query(sql, con=db_con)
 
     return df
 
-def package_json(collection, query_param, query_param_value):
-    df = get_data(collection, query_param, query_param_value)
+def package_json(collection, query_param, query_param_value, db_con):
+    df = get_data(collection, query_param, query_param_value, db_con)
     return df.to_dict(orient="records")
 
 def package_html(
     collection, 
     query_param, 
-    query_param_value, 
+    query_param_value,
+    db_con, 
     include_title=True, 
     include_description=True, 
     markup=True,
@@ -128,7 +131,7 @@ def package_html(
     index_in_html=False
     header_in_html=True
 
-    df = get_data(collection, query_param, query_param_value, target_output="html")
+    df = get_data(collection, query_param, query_param_value, db_con, target_output="html")
 
     if df.empty:
         return str()
@@ -168,13 +171,13 @@ def package_html(
 
     return html_content
 
-def get_people():
+def get_people(db_con):
     sql = '''
         SELECT displayname, identifier_email
         FROM people
         ORDER BY displayname
     '''
-    df = pd.read_sql_query(sql, con=conn)
+    df = pd.read_sql_query(sql, con=db_con)
 
     return df.to_dict(orient='records')
    

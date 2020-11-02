@@ -1,24 +1,15 @@
 from flask import Flask, jsonify, render_template, request
-
-import os
-import validators
-import re
-from urllib.parse import urlparse
-import pandas as pd
-import psycopg2
-from flask import Markup
-
-'''
-conn = psycopg2.connect(
-    host=os.getenv("HOSTNAME"),
-    port=os.getenv("PORT"),
-    user=os.getenv("USERNAME"),
-    password=os.getenv("PASSWORD"),
-    dbname=os.getenv("DATABASE")
-)
-'''
+from flask_sqlalchemy import SQLAlchemy
+from functions import *
 
 app = Flask(__name__)
+
+DB_URL = os.getenv("DATABASE_URL").replace("postgresql:", "postgresql+psycopg2:")
+app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+conn = db.engine.connect().connection
 
 @app.route("/")
 def home():
@@ -28,10 +19,9 @@ def home():
 def about():
     return render_template("about.html")
 
-'''
 @app.route("/people")
 def people():
-    return jsonify(get_people())
+    return jsonify(get_people(db_con=conn))
 
 @app.route("/person/<person_id>", methods=['GET'])
 def lookup_person(person_id):
@@ -55,7 +45,8 @@ def lookup_person(person_id):
             person_content[data_section] = package_json(
                 collection=data_section,
                 query_param=query_parameter,
-                query_param_value=person_id
+                query_param_value=person_id,
+                db_con=conn
             )
         
         return jsonify(person_content)
@@ -67,8 +58,9 @@ def lookup_person(person_id):
                 collection=data_section,
                 query_param=query_parameter,
                 query_param_value=person_id,
-                base_url=request.base_url
+                base_url=request.base_url,
+                db_con=conn
             )
 
         return render_template("person.html", html_content=person_content)
-'''
+
