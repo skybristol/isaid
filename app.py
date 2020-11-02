@@ -1,8 +1,17 @@
 from flask import Flask, jsonify, render_template, request
 from flask_sqlalchemy import SQLAlchemy
 from functions import *
+from flask_bootstrap import Bootstrap
+from flask_nav import Nav
+from flask_nav.elements import Navbar, View
 
-app = Flask(__name__)
+def create_app():
+    app = Flask(__name__)
+    Bootstrap(app)
+
+    return app
+
+app = create_app()
 
 DB_URL = os.getenv("DATABASE_URL").replace("postgresql:", "postgresql+psycopg2:")
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
@@ -14,10 +23,6 @@ conn = db.engine.connect().connection
 @app.route("/")
 def home():
     return render_template("home.html")
-
-@app.route("/about")
-def about():
-    return render_template("about.html")
 
 @app.route("/people")
 def people():
@@ -64,3 +69,14 @@ def lookup_person(person_id):
 
         return render_template("person.html", html_content=person_content)
 
+nav = Nav()
+
+@nav.navigation()
+def isaid_navbar():
+    return Navbar(
+        'iSAID',
+        View('Home', 'home'),
+        View('People', 'people')
+    )
+
+nav.init_app(app)

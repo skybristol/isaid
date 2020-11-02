@@ -9,3 +9,6 @@ validators==0.18.1
 pandas==1.1.4
 psycopg2-binary==2.8.6
 Flask-SQLAlchemy==2.4.4
+Flask-WTF==0.14.3
+Flask-Bootstrap==3.3.7.1
+flask-nav==0.6
