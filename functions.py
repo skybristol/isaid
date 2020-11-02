@@ -4,7 +4,14 @@ import re
 from urllib.parse import urlparse
 import pandas as pd
 import psycopg2
-from flask import Markup
+from flask import Markup, Flask, jsonify, render_template, request
+from flask_sqlalchemy import SQLAlchemy
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+conn = db.engine.connect().connection
 
 isaid_data_collections = {
     "directory": {
@@ -143,17 +150,18 @@ def package_html(
         html_content = html_content + f"<h2>{isaid_data_collections[collection]['title']}</h2>"
 
     if include_description:
-        html_content = html_content + f"<div class='container'>{isaid_data_collections[collection]['description']}</div>"
+        html_content = html_content + f"<p>{isaid_data_collections[collection]['description']}</p>"
     
     if base_url is not None:
-        html_content = html_content + f"<div class='container'><a href='{base_url}?collections={collection}&format=json'>View as JSON</a></div>"
+        html_content = html_content + f"<p><a href='{base_url}?collections={collection}&format=json'>View as JSON</a></p>"
 
     html_content = html_content + df.to_html(
         render_links=True,
         na_rep="NA",
         justify="left",
         header=header_in_html,
-        index=index_in_html
+        index=index_in_html,
+        classes=["table"]
     )
 
     if markup:
@@ -170,4 +178,14 @@ def get_people(db_con):
     df = pd.read_sql_query(sql, con=db_con)
 
     return df.to_dict(orient='records')
+
+def lookup_terms(term_type="expertise"):
+    sql = '''
+        SELECT DISTINCT object_label
+        FROM claims
+        WHERE property_label = '%s'
+        AND object_label <> ''
+    ''' % term_type
+
+    return pd.read_sql_query(sql, con=conn).to_dict(orient="records")
    

@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, flash, redirect
 from flask_sqlalchemy import SQLAlchemy
 from functions import *
 from flask_bootstrap import Bootstrap
@@ -13,9 +13,11 @@ def create_app():
 
 app = create_app()
 
-DB_URL = os.getenv("DATABASE_URL").replace("postgresql:", "postgresql+psycopg2:")
-app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
+app.config["SECRET_KEY"] = "SomethingSuperSecret"
+
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['WTF_CSRF_ENABLED'] = True
 
 db = SQLAlchemy(app)
 conn = db.engine.connect().connection
@@ -28,18 +30,20 @@ def home():
 def people():
     return jsonify(get_people(db_con=conn))
 
+@app.route("/terms/<term_source>", methods=['GET'])
+def terms(term_source):
+    return jsonify(lookup_terms(term_type=term_source))
+
 @app.route("/person/<person_id>", methods=['GET'])
 def lookup_person(person_id):
     query_parameter = lookup_parameter_person(person_id)
 
-    args = request.args
-
-    if "format" in args:
+    if "format" in request.args:
         output_format = args["format"]
     else:
         output_format="html"
 
-    if "collections" in args:
+    if "collections" in request.args:
         datasets = args["collections"].split(",")
     else:
         datasets = ["directory", "assets", "claims"]
@@ -69,6 +73,32 @@ def lookup_person(person_id):
 
         return render_template("person.html", html_content=person_content)
 
+from forms import PersonSearchForm
+
+@app.route('/search', methods=['GET', 'POST'])
+def search():
+    search = PersonSearchForm(request.form)
+    if request.method == 'POST':
+        return search_results(search)
+    return render_template('search.html', form=search)
+
+@app.route('/results')
+def search_results(search):
+    if search.data["email"] is not None:
+        return redirect(f'/person/{search.data["email"]}')
+    
+    results = []
+    search_string = search.data['search']
+    if search.data['search'] == '':
+        pass 
+    if not results:
+        flash(type(search))
+        return redirect('/search')
+    else:
+        # display results
+        return render_template('results.html', results=results)
+
+
 nav = Nav()
 
 @nav.navigation()
@@ -80,3 +110,4 @@ def isaid_navbar():
     )
 
 nav.init_app(app)
+

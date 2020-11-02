@@ -1,3 +1,10 @@
-{% block container %}
+{% extends "bootstrap/base.html" %}
+{% block title %}iSAID Person Details{% endblock %}
+
+{% block navbar %}
+{{nav.isaid_navbar.render()}}
+{% endblock %}
+
+{% block content %}
     {{html_content}}
 {% endblock %}
