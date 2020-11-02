@@ -169,15 +169,36 @@ def package_html(
 
     return html_content
 
-def get_people(db_con):
-    sql = '''
-        SELECT displayname, identifier_email
-        FROM people
-        ORDER BY displayname
-    '''
-    df = pd.read_sql_query(sql, con=db_con)
+def get_people(search_type=None, search_term=None):
+    d_search = {
+        "search_type": search_type,
+        "search_term": search_term
+    }
 
-    return df.to_dict(orient='records')
+    if search_type in ["expertise", "job title", "organization"] and search_term is not None:
+        sql = '''
+            SELECT subject_displayname AS full_name, subject_identifier_email AS email, COUNT(*) as total_occurrences
+            FROM identified_claims_m
+            WHERE property_label = '%(search_type)s'
+            AND object_label LIKE '*%(search_term)s*'
+            GROUP BY subject_displayname, subject_identifier_email
+            ORDER BY subject_displayname
+        ''' % d_search
+    elif search_type in ["name"] and search_term is not None:
+        sql = '''
+            SELECT displayname AS full_name, identifier_email AS email
+            FROM people
+            WHERE displayname LIKE '%%%s%%'
+            ORDER BY displayname
+        ''' % search_term
+    else:
+        sql = '''
+            SELECT displayname AS full_name, identifier_email AS email
+            FROM people
+            ORDER BY displayname
+        '''
+    df = pd.read_sql_query(sql, con=conn)
+    return df
 
 def lookup_terms(term_type="expertise"):
     sql = '''

@@ -1,0 +1,27 @@
+{% extends "bootstrap/base.html" %}
+{% block title %}iSAID Listing of People{% endblock %}
+
+{% block navbar %}
+{{nav.isaid_navbar.render()}}
+{% endblock %}
+
+{% block content %}
+    <p>Total Results: {{ data|length }}</p>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for index, row in data.iterrows() %}
+                <tr>
+                    <td>{{ row.full_name }}</td>
+                    <td><a href="/person/{{ row.email }}">{{ row.email }}</a></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {{html_content}}
+{% endblock %}

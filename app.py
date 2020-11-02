@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template, request, flash, redirect
+from flask import Flask, jsonify, render_template, request, flash, redirect, Markup, url_for
 from flask_sqlalchemy import SQLAlchemy
 from functions import *
 from flask_bootstrap import Bootstrap
@@ -13,14 +13,24 @@ def create_app():
 
 app = create_app()
 
-app.config["SECRET_KEY"] = "SomethingSuperSecret"
-
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['WTF_CSRF_ENABLED'] = True
-
+#app.config["SECRET_KEY"] = "SomethingSuperSecret"
+#app.config['WTF_CSRF_ENABLED'] = True
 db = SQLAlchemy(app)
 conn = db.engine.connect().connection
+
+nav = Nav()
+
+@nav.navigation()
+def isaid_navbar():
+    return Navbar(
+        'iSAID',
+        View('Home', 'home'),
+        View('People', 'people')
+    )
+
+nav.init_app(app)
 
 @app.route("/")
 def home():
@@ -28,7 +38,24 @@ def home():
 
 @app.route("/people")
 def people():
-    return jsonify(get_people(db_con=conn))
+    if "format" in request.args:
+        output_format = request.args["format"]
+    else:
+        output_format="html"
+    
+    search_type=None
+    search_term=None
+
+    if "name" in request.args:
+        search_type="name"
+        search_term=request.args["name"]
+
+    people_records = get_people(search_type=search_type, search_term=search_term)
+
+    if output_format == "html":
+        return render_template("people.html", data=people_records)
+    else:
+        return jsonify(people_records.to_dict(orient='records'))
 
 @app.route("/terms/<term_source>", methods=['GET'])
 def terms(term_source):
@@ -39,12 +66,12 @@ def lookup_person(person_id):
     query_parameter = lookup_parameter_person(person_id)
 
     if "format" in request.args:
-        output_format = args["format"]
+        output_format = request.args["format"]
     else:
         output_format="html"
 
     if "collections" in request.args:
-        datasets = args["collections"].split(",")
+        datasets = request.args["collections"].split(",")
     else:
         datasets = ["directory", "assets", "claims"]
 
@@ -72,42 +99,4 @@ def lookup_person(person_id):
             )
 
         return render_template("person.html", html_content=person_content)
-
-from forms import PersonSearchForm
-
-@app.route('/search', methods=['GET', 'POST'])
-def search():
-    search = PersonSearchForm(request.form)
-    if request.method == 'POST':
-        return search_results(search)
-    return render_template('search.html', form=search)
-
-@app.route('/results')
-def search_results(search):
-    if search.data["email"] is not None:
-        return redirect(f'/person/{search.data["email"]}')
-    
-    results = []
-    search_string = search.data['search']
-    if search.data['search'] == '':
-        pass 
-    if not results:
-        flash(type(search))
-        return redirect('/search')
-    else:
-        # display results
-        return render_template('results.html', results=results)
-
-
-nav = Nav()
-
-@nav.navigation()
-def isaid_navbar():
-    return Navbar(
-        'iSAID',
-        View('Home', 'home'),
-        View('People', 'people')
-    )
-
-nav.init_app(app)
 
