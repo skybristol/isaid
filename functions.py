@@ -41,7 +41,7 @@ isaid_data_collections = {
         "sort_by": "datepublished"
     },
     "claims": {
-        "table_name": "identified_claims",
+        "table_name": "identified_claims_m",
         "title": "Statements About a Person",
         "description": "Statements or assertions about a person or asset that characterize the entities in "
                         "various ways, including the connections between entities.",
