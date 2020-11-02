@@ -8,6 +8,7 @@ import pandas as pd
 import psycopg2
 from flask import Markup
 
+'''
 conn = psycopg2.connect(
     host=os.getenv("HOSTNAME"),
     port=os.getenv("PORT"),
@@ -15,6 +16,7 @@ conn = psycopg2.connect(
     password=os.getenv("PASSWORD"),
     dbname=os.getenv("DATABASE")
 )
+'''
 
 app = Flask(__name__)
 
