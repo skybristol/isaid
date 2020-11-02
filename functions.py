@@ -129,6 +129,9 @@ def package_html(
     header_in_html=True
 
     df = get_data(collection, query_param, query_param_value, target_output="html")
+
+    if df.empty:
+        return str()
     
     if isaid_data_collections[collection]["display_transpose"]:
         index_in_html=True
