@@ -1,5 +1,20 @@
 from flask import Flask, jsonify, render_template, request
-from functions import *
+
+import os
+import validators
+import re
+from urllib.parse import urlparse
+import pandas as pd
+import psycopg2
+from flask import Markup
+
+conn = psycopg2.connect(
+    host=os.getenv("HOSTNAME"),
+    port=os.getenv("PORT"),
+    user=os.getenv("USERNAME"),
+    password=os.getenv("PASSWORD"),
+    dbname=os.getenv("DATABASE")
+)
 
 app = Flask(__name__)
 
@@ -11,11 +26,11 @@ def home():
 def about():
     return render_template("about.html")
 
+'''
 @app.route("/people")
 def people():
     return jsonify(get_people())
 
-'''
 @app.route("/person/<person_id>", methods=['GET'])
 def lookup_person(person_id):
     query_parameter = lookup_parameter_person(person_id)
