@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, render_template, request
-from functions import *
+#from functions import *
 
 app = Flask(__name__)
 
@@ -11,6 +11,7 @@ def home():
 def about():
     return render_template("about.html")
 
+'''
 @app.route("/people")
 def people():
     return jsonify(get_people())
@@ -53,4 +54,4 @@ def lookup_person(person_id):
             )
 
         return render_template("person.html", html_content=person_content)
-
+'''
