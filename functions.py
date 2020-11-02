@@ -6,16 +6,6 @@ import pandas as pd
 import psycopg2
 from flask import Markup
 
-'''
-conn = psycopg2.connect(
-    host=os.getenv("HOSTNAME"),
-    port=os.getenv("PORT"),
-    user=os.getenv("USERNAME"),
-    password=os.getenv("PASSWORD"),
-    dbname=os.getenv("DATABASE")
-)
-'''
-
 isaid_data_collections = {
     "directory": {
         "table_name": "people_with_org_info",
