@@ -164,3 +164,14 @@ def package_html(
         html_content = Markup(html_content)
 
     return html_content
+
+def get_people():
+    sql = '''
+        SELECT displayname, identifier_email
+        FROM people
+        ORDER BY displayname
+    '''
+    df = pd.read_sql_query(sql, con=conn)
+
+    return df.to_dict(orient='records')
+   
