@@ -59,7 +59,7 @@ def people():
     people_records = get_people(search_type=search_type, search_term=search_term)
 
     if output_format == "html":
-        return render_template("people.html", data=people_records)
+        return render_template("people.html", data=people_records, search_type=search_type, search_term=search_term)
     else:
         return jsonify(people_records.to_dict(orient='records'))
 

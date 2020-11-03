@@ -7,6 +7,12 @@
 
 {% block content %}
     <p>Total Results: {{ data|length }}</p>
+    <div>
+        <ul>
+            <li>Search Type: {{ search_type }}</li>
+            <li>Search Term: {{ search_term }}</li>
+        </ul>
+    </div>
     <table class="table">
         <thead>
             <tr>
