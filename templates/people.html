@@ -1,4 +1,10 @@
 {% extends "bootstrap/base.html" %}
+
+{% block styles %}
+{{ super() }}
+<link href="https://nightly.datatables.net/css/jquery.dataTables.css" rel="stylesheet" type="text/css" />
+{% endblock %}
+
 {% block title %}iSAID Listing of People{% endblock %}
 
 {% block navbar %}
@@ -13,7 +19,7 @@
             <li>Search Term: {{ search_term }}</li>
         </ul>
     </div>
-    <table class="table">
+    <table id="people" class="table">
         <thead>
             <tr>
                 <th>Name</th>
@@ -23,10 +29,35 @@
         <tbody>
             {% for index, row in data.iterrows() %}
                 <tr>
-                    <td>{{ row.full_name }}</td>
-                    <td><a href="/person/{{ row.email }}">{{ row.email }}</a></td>
+                    <td><a href="/person/{{ row.email }}">{{ row.full_name }}</a></td>
+                    <td>{{ row.email }}</td>
                 </tr>
             {% endfor %}
         </tbody>
+        <tfoot>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+            </tr>
+        </tfoot>
     </table>
+{% endblock %}
+
+{% block scripts %}
+{{super()}}
+<script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+<script src="https://nightly.datatables.net/js/jquery.dataTables.js"></script>
+<script type="text/javascript" class="init">
+    $(document).ready(function() {
+        $('#people').DataTable(
+            {
+                dom: 'Bfrtip',
+                buttons: [
+                    'excel',
+                    'csv'
+                ]
+            }
+        );
+    } );
+</script>
 {% endblock %}

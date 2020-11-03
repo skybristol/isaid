@@ -74,7 +74,6 @@ def terms(claim_type):
         return jsonify(data=d_results)
     else:
         return render_template("claims.html", data=df, claim_type=claim_type)
-        #return render_template("claims.html")
 
 @app.route("/person/<person_id>", methods=['GET'])
 def lookup_person(person_id):
