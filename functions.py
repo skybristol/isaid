@@ -4,14 +4,23 @@ import re
 from urllib.parse import urlparse
 import pandas as pd
 import psycopg2
-from flask import Markup, Flask, jsonify, render_template, request
+from flask import Markup, Flask, jsonify, render_template, request, abort
 from flask_sqlalchemy import SQLAlchemy
+import redis
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 conn = db.engine.connect().connection
+
+r = redis.StrictRedis(
+    host=os.environ["REDIS_HOST"], 
+    port=os.environ["REDIS_PORT"], 
+    password=os.environ["REDIS_PASS"], 
+    decode_responses=True,
+    ssl=True
+)
 
 isaid_data_collections = {
     "directory": {
@@ -75,6 +84,13 @@ isaid_data_collections = {
     }
 }
 
+def get_person(email):
+    person = r.hgetall(email)
+
+    if person:
+        return person
+    else:
+        return None
 
 def lookup_parameter_person(person_id):
     if validators.email(person_id):
@@ -175,12 +191,12 @@ def get_people(search_type=None, search_term=None):
         "search_term": search_term
     }
 
-    if search_type in ["expertise", "job title", "organization"] and search_term is not None:
+    if search_type in ["expertise", "job title", "organization affiliation"] and search_term is not None:
         sql = '''
             SELECT subject_displayname AS full_name, subject_identifier_email AS email, COUNT(*) as total_occurrences
             FROM identified_claims_m
             WHERE property_label = '%(search_type)s'
-            AND object_label LIKE '*%(search_term)s*'
+            AND object_label LIKE '%%%(search_term)s%%'
             GROUP BY subject_displayname, subject_identifier_email
             ORDER BY subject_displayname
         ''' % d_search
@@ -197,16 +213,54 @@ def get_people(search_type=None, search_term=None):
             FROM people
             ORDER BY displayname
         '''
+
     df = pd.read_sql_query(sql, con=conn)
     return df
 
-def lookup_terms(term_type="expertise"):
+def lookup_terms(claim_type="expertise", use_cache=True, check_refresh=False):
+    cache_file = f"static/data_cache/{claim_type}.p"
+
     sql = '''
-        SELECT DISTINCT object_label
+        SELECT object_label, subject_label, count(*) AS total_occurrences, max(claim_created) AS maxdate
         FROM claims
         WHERE property_label = '%s'
         AND object_label <> ''
-    ''' % term_type
+        GROUP BY object_label, subject_label
+        ORDER BY object_label
+    ''' % claim_type
 
-    return pd.read_sql_query(sql, con=conn).to_dict(orient="records")
-   
+    if use_cache and os.path.exists(cache_file):
+        df = pd.read_pickle(cache_file)
+        if not check_refresh:
+            return df
+        else:
+            sql_max_date = '''
+                SELECT MAX(claim_created) AS maxdate
+                FROM claims
+                WHERE property_label = '%s'
+            ''' % claim_type
+
+            max_date = pd.read_sql_query(sql_max_date, con=conn)["maxdate"][0]
+
+            if max_date <= df.claim_created.max():
+                return df
+
+    df = pd.read_sql_query(sql, con=conn)
+
+    # Further group by unique label occurrences on unique subjects
+    df_grouped = df.groupby("object_label", as_index=False).count()[["object_label", "subject_label"]]
+    df_grouped.columns = ["object_label", "total_occurrences"]
+    df_grouped["maxdate"] = df.maxdate.max()
+    # Cache file for later use
+    df_grouped.to_pickle(cache_file)
+
+    return df_grouped
+
+def requested_format(args, default="json"):
+    if "format" not in args:
+        return default
+    else:
+        if args["format"] not in ["html","json"]:
+            abort(400)
+        else:
+            return args["format"]

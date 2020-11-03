@@ -1,9 +1,9 @@
-from flask import Flask, jsonify, render_template, request, flash, redirect, Markup, url_for
+from flask import Flask, jsonify, render_template, request, flash, redirect, Markup, url_for, abort
 from flask_sqlalchemy import SQLAlchemy
 from functions import *
 from flask_bootstrap import Bootstrap
 from flask_nav import Nav
-from flask_nav.elements import Navbar, View
+from flask_nav.elements import Navbar, View, Subgroup
 
 def create_app():
     app = Flask(__name__)
@@ -27,7 +27,13 @@ def isaid_navbar():
     return Navbar(
         'iSAID',
         View('Home', 'home'),
-        View('People', 'people')
+        View('People', 'people'),
+        Subgroup(
+            'Descriptors',
+            View('Expertise', 'terms', claim_type='expertise'),
+            View('Job Titles', 'terms', claim_type='job title'),
+            View('Organization Affiliation', 'terms', claim_type='organization affiliation')
+        )
     )
 
 nav.init_app(app)
@@ -35,6 +41,11 @@ nav.init_app(app)
 @app.route("/")
 def home():
     return render_template("home.html")
+
+@app.route("/fast_person/<email>")
+def fast_person(email):
+    person_data = get_person(email)
+    return jsonify(person_data)
 
 @app.route("/people")
 def people():
@@ -46,9 +57,9 @@ def people():
     search_type=None
     search_term=None
 
-    if "name" in request.args:
-        search_type="name"
-        search_term=request.args["name"]
+    if "search_type" in request.args and "search_term" in request.args:
+        search_type=request.args["search_type"]
+        search_term=request.args["search_term"]
 
     people_records = get_people(search_type=search_type, search_term=search_term)
 
@@ -57,18 +68,24 @@ def people():
     else:
         return jsonify(people_records.to_dict(orient='records'))
 
-@app.route("/terms/<term_source>", methods=['GET'])
-def terms(term_source):
-    return jsonify(lookup_terms(term_type=term_source))
+@app.route("/claims/<claim_type>", methods=['GET'])
+def terms(claim_type):
+    output_format = requested_format(request.args, default="html")
+
+    df = lookup_terms(claim_type)
+
+    if output_format == "json":
+        d_results = df.to_dict(orient="records")
+        return jsonify(data=d_results)
+    else:
+        #return render_template("claims2.html", data=df, claim_type=claim_type)
+        return render_template("claims.html")
 
 @app.route("/person/<person_id>", methods=['GET'])
 def lookup_person(person_id):
-    query_parameter = lookup_parameter_person(person_id)
+    output_format = requested_format(request.args, default="html")
 
-    if "format" in request.args:
-        output_format = request.args["format"]
-    else:
-        output_format="html"
+    query_parameter = lookup_parameter_person(person_id)
 
     if "collections" in request.args:
         datasets = request.args["collections"].split(",")
