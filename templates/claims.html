@@ -1,58 +1,49 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <title>iSAID Claims About People</title>
-  <meta charset="utf-8">
-  <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.min.css"/>
-  <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
-  <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>
-</head>
-<body>
-<h1>Claims</h1>
-<table id="claims" class="display" style="width:100%">
+{% extends "bootstrap/base.html" %}
+
+{% block styles %}
+{{ super() }}
+<link href="https://nightly.datatables.net/css/jquery.dataTables.css" rel="stylesheet" type="text/css" />
+{% endblock %}
+
+{% block title %}iSAID Claims{% endblock %}
+
+{% block navbar %}
+{{nav.isaid_navbar.render()}}
+{% endblock %}
+
+{% block content %}
+    <h1>Claims on {{ claim_type }}</h1>
+    <table id="claims" class="table">
         <thead>
             <tr>
-                <th>Term</th>
+                <th>Claim Label</th>
                 <th>Total Occurrences</th>
             </tr>
         </thead>
+        <tbody>
+            {% for index, row in data.iterrows() %}
+                <tr>
+                    <td><a href="/people?search_type={{ claim_type }}&search_term={{ row.object_label }}">{{ row.object_label }}</a></td>
+                    <td>{{ row.total_occurrences }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
         <tfoot>
             <tr>
-                <th>Term</th>
+                <th>Claim Label</th>
                 <th>Total Occurrences</th>
             </tr>
         </tfoot>
     </table>
-<script>
-function setupData() {
-    $(document).ready(function () {
-        $('#claims').DataTable({
-            "ajax": {
-                "url": window.location.pathname + "?format=json",
-                "dataType": "json",
-                "dataSrc": "data",
-                "contentType":"application/json"
-            },
-            "columns": [
-                {
-                    "data": "object_label", 
-                    "name": "object_label",
-                    fnCreatedCell: function (nTd, sData, oData, iRow, iCol) {
-                        $(nTd).html(
-                            "<a href='/people?search_type="+window.location.pathname.split('/').pop()+"&search_term="+oData.object_label+"'>"+oData.object_label+"</a>"
-                        );
-                    }
-                },
-                {"data": "total_occurrences"}
-            ],
-            buttons: {
-                name: 'claims',
-                buttons: [ 'copy', 'csv', 'excel' ]
-            }
-        });
-    });
-}
-$( window ).on( "load", setupData );
+{% endblock %}
+
+{% block scripts %}
+{{super()}}
+<script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+<script src="https://nightly.datatables.net/js/jquery.dataTables.js"></script>
+<script type="text/javascript" class="init">
+    $(document).ready(function() {
+        $('#claims').DataTable();
+    } );
 </script>
-</body>
-</html>
+{% endblock %}

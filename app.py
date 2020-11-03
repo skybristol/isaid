@@ -73,8 +73,8 @@ def terms(claim_type):
         d_results = df.to_dict(orient="records")
         return jsonify(data=d_results)
     else:
-        #return render_template("claims2.html", data=df, claim_type=claim_type)
-        return render_template("claims.html")
+        return render_template("claims.html", data=df, claim_type=claim_type)
+        #return render_template("claims.html")
 
 @app.route("/person/<person_id>", methods=['GET'])
 def lookup_person(person_id):
