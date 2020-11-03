@@ -179,7 +179,7 @@ def get_people(search_type=None, search_term=None):
             SELECT subject_displayname AS full_name, subject_identifier_email AS email, COUNT(*) as total_occurrences
             FROM identified_claims_m
             WHERE property_label = '%(search_type)s'
-            AND object_label LIKE '%%%(search_term)s%%'
+            AND LOWER(object_label) LIKE LOWER('%%%(search_term)s%%')
             GROUP BY subject_displayname, subject_identifier_email
             ORDER BY subject_displayname
         ''' % d_search
