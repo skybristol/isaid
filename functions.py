@@ -6,21 +6,12 @@ import pandas as pd
 import psycopg2
 from flask import Markup, Flask, jsonify, render_template, request, abort
 from flask_sqlalchemy import SQLAlchemy
-import redis
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 conn = db.engine.connect().connection
-
-r = redis.StrictRedis(
-    host=os.environ["REDIS_HOST"], 
-    port=os.environ["REDIS_PORT"], 
-    password=os.environ["REDIS_PASS"], 
-    decode_responses=True,
-    ssl=True
-)
 
 isaid_data_collections = {
     "directory": {
@@ -83,14 +74,6 @@ isaid_data_collections = {
                         "them in various ways, including the connections between entities."
     }
 }
-
-def get_person(email):
-    person = r.hgetall(email)
-
-    if person:
-        return person
-    else:
-        return None
 
 def lookup_parameter_person(person_id):
     if validators.email(person_id):

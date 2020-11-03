@@ -42,11 +42,6 @@ nav.init_app(app)
 def home():
     return render_template("home.html")
 
-@app.route("/fast_person/<email>")
-def fast_person(email):
-    person_data = get_person(email)
-    return jsonify(person_data)
-
 @app.route("/people")
 def people():
     if "format" in request.args:
