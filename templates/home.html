@@ -8,11 +8,27 @@
 {% block content %}
 <blockquote class="blockquote text-left">
     <p class="mb-0">This web app provides a simple interface to view information cached in the Integrated Science Assessment Information Database (iSAID). iSAID is an experimental toolset that continuously assembles information about people, facilities, and scientific assets useful in assessing overall capacity to carry out integrated science. The interface is deliberately ugly by design as it is intended to provide a full dive into the data and not a specific type of presentation.</p>
+    
     <h4>Things you can do here</h4>
     <ul>
-        <li>View a list of all people</li>
-        <li>Explore "descriptors" (aka claims) made about people from multiple reference materials - expertise terms, job titles, organization affiliations</li>
+        <li>View a list of all <a href="/people">people</a> processed through this system</li>
+        <li>Explore "descriptors" (aka claims) made about people from multiple reference materials - <a href="/claims/expertise">expertise</a> terms, <a href="/claims/job titles">job titles</a>, <a href="/claims/organization affiliation">organization affiliations</a></li>
         <li>Click on descriptor term to filter the list of people</li>
     </ul>
+
+    <h4>Data Model</h4>
+    <p class="mb-0">iSAID is eventually meant to incorporate data about people, organizations, scientific assets (publications, data, models, tools, instruments, etc.) and the relationships between all of these "end members." In our current environment, the metadata and other documentation about these items is scattered throughout many different information stores with a whole raft of underlying models and assumptions that are not always clearly documented. For this reason, we are attempting to define and iteratively build out a higher level abstract data model and populate it with code-driven processes that can continually operate against available sources. All sources are public at this time, but we will be exploring means of synthesizing useful, publicly accessible information from certain internal sources that currently lack reasonable interfaces.</p>
+    <p class="mb-0">Our data model is generally informed from two main sources of inspiration:</p>
+    <ul>
+        <li>Wikidata's model of items (entities) with claims (statements) that are referenced and qualified. This closely resembles the original ScienceBase model as well where we took a similar "everything is an item" approach. A key tenet of this model is that every claim should be made using a property from a limited set that are all well defined in structure and semantic definition. Another key tenet is that end members to which a claim refers should also be defined, linkable entities in our system (or broadly on the web). Also, every claim should be referenced as to its provenance (the more explicit and detailed the better), and qualifiers should at least include a date that the claim was known to be valid.</li>
+        <li>A core set of properties (claims) for all entities is inspired by schema.org schemas as generally simplified models for things that we need to describe and bring together in iSAID. Part of our goal is to promote the implementation of linked open data methods and way of thinking across all of the systems we are tapping for this work. If all the underlying information platforms could implement the simple concepts of accessible (e.g., not overly complicated with fancy whiz bang HTML rendering techniques) landing pages that advertise their primary assets and incorporated linked data methods of embedding structured information according to community-accepted specifications, then most of the complicated procedures we have had to write into the pyLinkedCMD package (discussed below) would be unnecessary.</li>
+    </ul>
+    <p class="mb-0">Although all of the information we are bringing together for this exercise could be organized into a very low level triple store data model, working with data in that construct is not as intuitive for the average user. We've opted to develop and use a slight abstraction from that in a basic relational model, focusing on people and organizations, scientific assets (other than people), and statements/claims derived about all of those. We put a very small number of properties into our directory of people and organizations and the highest level summary information on assets, all based on schema.org (people, orgs, and creative works so far). This is mostly considered demographic or basic descriptive and locational information about those entities, and claims are focused on the interesting bits that we want to analyze, harmonize, and leverage in assessment.</p>
+
+    <h4>pyLinkedCMD</h4>
+    <p class="mb-0">The <a href="https://github.com/skybristol/pylinkedcmd">pyLinkedCMD</a> package is a set of Python codes for operating against all of the various data sources that we are processing. At this point, everything we are dealing with is completely in the public domain on readily accessible online resources with a variety of APIs or other interfaces. pyLinkedCMD classes are developed for handling the interfaces we need to make and processing into our abstract data model. Right now, this is all quite ugly code because it has to do a lot of ugly data processing.</p>
+
+    <h4>GraphQL</h4>
+    <p class="mb-0">In addition to the interfaces presented through this app, there is an experimental GraphQL end point with most iSAID data exposed for other types of uses. Some of the example notebooks in the pyLinkedCMD package exercise this access point in a variety of demonstrations.</p>
 </blockquote>
 {% endblock %}

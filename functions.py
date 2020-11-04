@@ -200,7 +200,7 @@ def get_people(search_type=None, search_term=None):
     df = pd.read_sql_query(sql, con=conn)
     return df
 
-def lookup_terms(claim_type="expertise", use_cache=True, check_refresh=False):
+def lookup_terms(claim_type="expertise", use_cache=True, check_refresh=True):
     cache_file = f"static/data_cache/{claim_type}.p"
 
     sql = '''
@@ -225,7 +225,7 @@ def lookup_terms(claim_type="expertise", use_cache=True, check_refresh=False):
 
             max_date = pd.read_sql_query(sql_max_date, con=conn)["maxdate"][0]
 
-            if max_date <= df.claim_created.max():
+            if max_date <= df.maxdate.max():
                 return df
 
     df = pd.read_sql_query(sql, con=conn)
