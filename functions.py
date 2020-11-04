@@ -200,7 +200,7 @@ def get_people(search_type=None, search_term=None):
     df = pd.read_sql_query(sql, con=conn)
     return df
 
-def lookup_terms(claim_type="expertise", use_cache=True, check_refresh=True):
+def lookup_terms(claim_type="expertise", use_cache=True, check_refresh=False):
     cache_file = f"static/data_cache/{claim_type}.p"
 
     sql = '''
