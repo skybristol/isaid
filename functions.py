@@ -7,6 +7,7 @@ import psycopg2
 from flask import Markup, Flask, jsonify, render_template, request, abort
 from flask_sqlalchemy import SQLAlchemy
 import meilisearch
+import ast
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
@@ -273,3 +274,17 @@ def get_facets(categories=['expertise','raw_topics','fields_of_work']):
 
     return facet_results
 
+def search_people(q=str(), facet_filters=None):
+    if facet_filters is None:
+        search_results = search_client.get_index('people').search(q, {
+            "limit": 10000,
+            "facetsDistribution": ['expertise','raw_topics','fields_of_work']
+        })
+    else:
+        search_results = search_client.get_index('people').search(q, {
+            "limit": 10000,
+            "facetsDistribution": ['expertise','raw_topics','fields_of_work'],
+            "facetFilters": facet_filters
+        })
+
+    return search_results

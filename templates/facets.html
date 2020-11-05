@@ -23,7 +23,7 @@
         <tbody>
             {% for k, v in data["facetsDistribution"][category].items() %}
                 <tr>
-                    <td>{{ k }}</a></td>
+                    <td><a href="/search?filters={{category}}:{{k}}">{{ k }}</a></td>
                     <td>{{ v }}</td>
                 </tr>
             {% endfor %}

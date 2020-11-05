@@ -141,3 +141,24 @@ def show_facets(category):
         return jsonify(facet_data)
     else:
         return render_template("facets.html", data=facet_data, category=category)
+
+@app.route("/search", methods=["GET"])
+def show_people():
+    output_format = requested_format(request.args, default="html")
+
+    if "q" in request.args:
+        query = request.args["q"]
+    else:
+        query = str()
+
+    if "filters" in request.args:
+        filters_criteria = request.args["filters"].split(",")
+        search_results = search_people(query, facet_filters=filters_criteria)
+    else:
+        filters_criteria = None
+        search_results = search_people(query)
+
+    if output_format == "json":
+        return jsonify(search_results)
+    else:
+        return render_template("search.html", data=search_results, query=query, filters=filters_criteria)

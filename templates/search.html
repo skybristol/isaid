@@ -1,0 +1,77 @@
+{% extends "bootstrap/base.html" %}
+
+{% block styles %}
+{{ super() }}
+<link href="https://nightly.datatables.net/css/jquery.dataTables.css" rel="stylesheet" type="text/css" />
+{% endblock %}
+
+{% block title %}iSAID People Search Results{% endblock %}
+
+{% block navbar %}
+{{nav.isaid_navbar.render()}}
+{% endblock %}
+
+{% block content %}
+    <h1>Search results for people</h1>
+    {% if query %}
+        <div>Search Criteria: {{ query }}</div>
+    {% endif %}
+    {% if filters %}
+        <ul>
+            {% for filter in filters %}
+            <li>{{ filter }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <table id="results" class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Job Title</th>
+                <th>Email</th>
+                <th>Office Location</th>
+                <th>Expertise</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for hit in data["hits"] %}
+                <tr>
+                    <td>{{ hit["displayname"] }}</a></td>
+                    <td>{{ hit["jobtitle"] }}</td>
+                    <td>{{ hit["email"] }}</td>
+                    <td>{{ hit["city"] }}, {{ hit["state"] }}</td>
+                    <td>
+                    {% if "expertise" in hit %}
+                        <ul>
+                        {% for term in hit["expertise"] %}
+                            <li>{{ term }}</li>
+                        {% endfor %}
+                        </ul>
+                    {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <th>Name</th>
+                <th>Job Title</th>
+                <th>Email</th>
+                <th>Office Location</th>
+                <th>Expertise</th>
+            </tr>
+        </tfoot>
+    </table>
+{% endblock %}
+
+{% block scripts %}
+{{super()}}
+<script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+<script src="https://nightly.datatables.net/js/jquery.dataTables.js"></script>
+<script type="text/javascript" class="init">
+    $(document).ready(function() {
+        $('#results').DataTable();
+    } );
+</script>
+{% endblock %}
