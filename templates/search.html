@@ -37,7 +37,7 @@
         <tbody>
             {% for hit in data["hits"] %}
                 <tr>
-                    <td>{{ hit["displayname"] }}</a></td>
+                    <td><a href="/person/{{ hit['email'] }}">{{ hit["displayname"] }}</a></td>
                     <td>{{ hit["jobtitle"] }}</td>
                     <td>{{ hit["email"] }}</td>
                     <td>{{ hit["city"] }}, {{ hit["state"] }}</td>
@@ -45,7 +45,7 @@
                     {% if "expertise" in hit %}
                         <ul>
                         {% for term in hit["expertise"] %}
-                            <li>{{ term }}</li>
+                            <li><a href="/search?filters=expertise:{{term}}">{{ term }}</a></li>
                         {% endfor %}
                         </ul>
                     {% endif %}
