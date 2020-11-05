@@ -33,6 +33,12 @@ def isaid_navbar():
             View('Expertise', 'terms', claim_type='expertise'),
             View('Job Titles', 'terms', claim_type='job title'),
             View('Organization Affiliation', 'terms', claim_type='organization affiliation')
+        ),
+        Subgroup(
+            'Facets',
+            View('Expertise', 'show_facets', category='expertise'),
+            View('Fields of Work', 'show_facets', category='fields_of_work'),
+            View('Raw Topics from Data/Models', 'show_facets', category='raw_topics')
         )
     )
 
@@ -111,3 +117,27 @@ def lookup_person(person_id):
 
         return render_template("person.html", html_content=person_content)
 
+@app.route("/events", methods=['GET'])
+def lookup_events():
+    output_format = requested_format(request.args, default="json")
+    df_events = get_events()
+
+    if output_format == "json":
+        return jsonify(df_events.to_dict(orient="records"))
+    else:
+        return render_template("events.html", data=df_events)
+
+@app.route("/facets", defaults={"category": None}, methods=["GET"])
+@app.route("/facets/<category>", methods=["GET"])
+def show_facets(category):
+    output_format = requested_format(request.args, default="html")
+
+    if category is None:
+        facet_data = get_facets()
+    else:
+        facet_data = get_facets(categories=[category])
+
+    if output_format == "json":
+        return jsonify(facet_data)
+    else:
+        return render_template("facets.html", data=facet_data, category=category)

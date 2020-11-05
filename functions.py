@@ -6,12 +6,18 @@ import pandas as pd
 import psycopg2
 from flask import Markup, Flask, jsonify, render_template, request, abort
 from flask_sqlalchemy import SQLAlchemy
+import meilisearch
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 conn = db.engine.connect().connection
+
+search_client = meilisearch.Client(
+    os.environ["MEILI_HTTP_ADDR"], 
+    os.environ["MEILI_KEY"]
+)
 
 isaid_data_collections = {
     "directory": {
@@ -177,7 +183,7 @@ def get_people(search_type=None, search_term=None):
     if search_type in ["expertise", "job title", "organization affiliation"] and search_term is not None:
         sql = '''
             SELECT subject_displayname AS full_name, subject_identifier_email AS email, COUNT(*) as total_occurrences
-            FROM identified_claims_m
+            FROM identified_claims
             WHERE property_label = '%(search_type)s'
             AND LOWER(object_label) LIKE LOWER('%%%(search_term)s%%')
             GROUP BY subject_displayname, subject_identifier_email
@@ -247,3 +253,23 @@ def requested_format(args, default="json"):
             abort(400)
         else:
             return args["format"]
+
+def get_events():
+    sql = '''
+        SELECT DISTINCT reference
+        FROM claims
+        WHERE reference LIKE 'event:%'
+    '''
+
+    df = pd.read_sql_query(sql, con=conn)
+
+    return df
+
+def get_facets(categories=['expertise','raw_topics','fields_of_work']):
+    facet_results = search_client.get_index('people').search('', {
+        'limit': 0,
+        'facetsDistribution': categories,
+    })
+
+    return facet_results
+
