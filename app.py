@@ -29,7 +29,9 @@ def isaid_navbar():
         Subgroup(
             'Facets',
             View('Expertise', 'show_facets', category='expertise'),
+            View('Job Titles', 'show_facets', category='jobtitle'),
             View('Fields of Work', 'show_facets', category='fields_of_work'),
+            View('Organizations', 'show_facets', category='organization_name'),
             View('Raw Topics from Data/Models', 'show_facets', category='raw_topics')
         )
     )
