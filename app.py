@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from functions import *
 from flask_bootstrap import Bootstrap
 from flask_nav import Nav
-from flask_nav.elements import Navbar, View, Subgroup
+from flask_nav.elements import *
 
 def create_app():
     app = Flask(__name__)
@@ -15,8 +15,6 @@ app = create_app()
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-#app.config["SECRET_KEY"] = "SomethingSuperSecret"
-#app.config['WTF_CSRF_ENABLED'] = True
 db = SQLAlchemy(app)
 conn = db.engine.connect().connection
 
@@ -27,13 +25,7 @@ def isaid_navbar():
     return Navbar(
         'iSAID',
         View('Home', 'home'),
-        View('People', 'people'),
-        Subgroup(
-            'Descriptors',
-            View('Expertise', 'terms', claim_type='expertise'),
-            View('Job Titles', 'terms', claim_type='job title'),
-            View('Organization Affiliation', 'terms', claim_type='organization affiliation')
-        ),
+        View('People', 'show_people'),
         Subgroup(
             'Facets',
             View('Expertise', 'show_facets', category='expertise'),
@@ -47,39 +39,6 @@ nav.init_app(app)
 @app.route("/")
 def home():
     return render_template("home.html")
-
-@app.route("/people")
-def people():
-    if "format" in request.args:
-        output_format = request.args["format"]
-    else:
-        output_format="html"
-    
-    search_type=None
-    search_term=None
-
-    if "search_type" in request.args and "search_term" in request.args:
-        search_type=request.args["search_type"]
-        search_term=request.args["search_term"]
-
-    people_records = get_people(search_type=search_type, search_term=search_term)
-
-    if output_format == "html":
-        return render_template("people.html", data=people_records, search_type=search_type, search_term=search_term)
-    else:
-        return jsonify(people_records.to_dict(orient='records'))
-
-@app.route("/claims/<claim_type>", methods=['GET'])
-def terms(claim_type):
-    output_format = requested_format(request.args, default="html")
-
-    df = lookup_terms(claim_type)
-
-    if output_format == "json":
-        d_results = df.to_dict(orient="records")
-        return jsonify(data=d_results)
-    else:
-        return render_template("claims.html", data=df, claim_type=claim_type)
 
 @app.route("/person/<person_id>", methods=['GET'])
 def lookup_person(person_id):
@@ -142,23 +101,31 @@ def show_facets(category):
     else:
         return render_template("facets.html", data=facet_data, category=category)
 
-@app.route("/search", methods=["GET"])
+@app.route("/people", methods=["GET"])
 def show_people():
     output_format = requested_format(request.args, default="html")
+    api_url = "/people?format=json"
 
     if "q" in request.args:
         query = request.args["q"]
+        api_url += f"&q={query}"
     else:
         query = str()
 
     if "filters" in request.args:
         filters_criteria = request.args["filters"].split(",")
+        api_url += f"&filters={request.args['filters']}"
         search_results = search_people(query, facet_filters=filters_criteria)
     else:
         filters_criteria = None
         search_results = search_people(query)
 
-    if output_format == "json":
-        return jsonify(search_results)
+    if "include_facets" in request.args:
+        json_search_results = search_results
     else:
-        return render_template("search.html", data=search_results, query=query, filters=filters_criteria)
+        json_search_results = search_results["hits"]
+
+    if output_format == "json":
+        return jsonify(json_search_results)
+    else:
+        return render_template("search.html", data=search_results, query=query, filters=filters_criteria, api_url=api_url)

@@ -13,6 +13,7 @@
 
 {% block content %}
     <h1>Search results for people</h1>
+    <div>View as <a href="{{ api_url }}">JSON</a></div>
     {% if query %}
         <div>Search Criteria: {{ query }}</div>
     {% endif %}
@@ -31,6 +32,7 @@
                 <th>Job Title</th>
                 <th>Email</th>
                 <th>Office Location</th>
+                <th>Fields of Work</th>
                 <th>Expertise</th>
             </tr>
         </thead>
@@ -42,10 +44,19 @@
                     <td>{{ hit["email"] }}</td>
                     <td>{{ hit["city"] }}, {{ hit["state"] }}</td>
                     <td>
+                        {% if "fields_of_work" in hit %}
+                            <ul>
+                            {% for term in hit["fields_of_work"] %}
+                                <li><a href="/people?filters=fields_of_work:{{term}}">{{ term }}</a></li>
+                            {% endfor %}
+                            </ul>
+                        {% endif %}
+                        </td>
+                        <td>
                     {% if "expertise" in hit %}
                         <ul>
                         {% for term in hit["expertise"] %}
-                            <li><a href="/search?filters=expertise:{{term}}">{{ term }}</a></li>
+                            <li><a href="/people?filters=expertise:{{term}}">{{ term }}</a></li>
                         {% endfor %}
                         </ul>
                     {% endif %}
@@ -59,6 +70,7 @@
                 <th>Job Title</th>
                 <th>Email</th>
                 <th>Office Location</th>
+                <th>Fields of Work</th>
                 <th>Expertise</th>
             </tr>
         </tfoot>
