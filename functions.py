@@ -82,6 +82,14 @@ isaid_data_collections = {
     }
 }
 
+available_facets = [
+    'expertise',
+    'raw_topics',
+    'fields_of_work',
+    'jobtitle',
+    'organization_name'
+]
+
 def lookup_parameter_person(person_id):
     if validators.email(person_id):
         query_parameter = "identifier_email"
@@ -203,17 +211,30 @@ def get_facets(categories=['expertise','raw_topics','fields_of_work']):
 
     return facet_results
 
-def search_people(q=str(), facet_filters=None):
+def search_people(q=str(), facet_filters=None, return_facets=available_facets, response_type="person_docs"):
+    if response_type == "facet_frequency":
+        search_limit = 0
+    else:
+        search_limit = 10000
+
     if facet_filters is None:
         search_results = search_client.get_index('people').search(q, {
-            "limit": 10000,
-            "facetsDistribution": ['expertise','raw_topics','fields_of_work']
+            "limit": search_limit,
+            "facetsDistribution": return_facets
         })
     else:
         search_results = search_client.get_index('people').search(q, {
-            "limit": 10000,
-            "facetsDistribution": ['expertise','raw_topics','fields_of_work'],
+            "limit": search_limit,
+            "facetsDistribution": return_facets,
             "facetFilters": facet_filters
         })
 
-    return search_results
+    if response_type == "facet_frequency":
+        search_response = dict()
+        for facet in return_facets:
+            search_response[facet] = {k:v for k,v in search_results["facetsDistribution"][facet].items() if v > 0}
+    else:
+        search_response = search_results
+
+    return search_response
+

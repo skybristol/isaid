@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template, request, flash, redirect, Markup, url_for, abort
+from flask import Flask, jsonify, render_template, request, flash, redirect, Markup, url_for, abort, send_file
 from flask_sqlalchemy import SQLAlchemy
 from functions import *
 from flask_bootstrap import Bootstrap
@@ -32,6 +32,7 @@ def isaid_navbar():
             View('Job Titles', 'show_facets', category='jobtitle'),
             View('Fields of Work', 'show_facets', category='fields_of_work'),
             View('Organizations', 'show_facets', category='organization_name'),
+            View('Groups', 'show_facets', category='group_affiliations'),
             View('Raw Topics from Data/Models', 'show_facets', category='raw_topics')
         )
     )
@@ -123,7 +124,13 @@ def show_people():
         search_results = search_people(query)
 
     if "include_facets" in request.args:
-        json_search_results = search_results
+        facet_results = dict()
+        for facet_category,facet_dist in search_results["facetsDistribution"].items():
+            facet_results[facet_category] = {k:v for k,v in facet_dist.items() if v > 0 and len(k) > 0}
+        json_search_results = {
+            "search_results": search_results["hits"],
+            "facets_distribution": facet_results
+        }
     else:
         json_search_results = search_results["hits"]
 
@@ -131,3 +138,4 @@ def show_people():
         return jsonify(json_search_results)
     else:
         return render_template("search.html", data=search_results, query=query, filters=filters_criteria, api_url=api_url)
+

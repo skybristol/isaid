@@ -12,5 +12,5 @@ Flask-SQLAlchemy==2.4.4
 Flask-WTF==0.14.3
 Flask-Bootstrap==3.3.7.1
 flask-nav==0.6
-flask-navbar==1.0
+wordcloud==1.8.0
 meilisearch==0.13.0
