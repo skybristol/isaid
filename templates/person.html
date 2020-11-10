@@ -1,4 +1,10 @@
 {% extends "bootstrap/base.html" %}
+
+{% block styles %}
+{{ super() }}
+<link href="https://nightly.datatables.net/css/jquery.dataTables.css" rel="stylesheet" type="text/css" />
+{% endblock %}
+
 {% block title %}iSAID Person Details{% endblock %}
 
 {% block navbar %}
@@ -7,4 +13,21 @@
 
 {% block content %}
     {{html_content}}
+{% endblock %}
+
+{% block scripts %}
+{{super()}}
+<script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+<script src="https://nightly.datatables.net/js/jquery.dataTables.js"></script>
+<script type="text/javascript" class="init">
+    $(document).ready(function() {
+        $('#assets').DataTable(
+        );
+    } );
+
+    $(document).ready(function() {
+        $('#claims').DataTable(
+        );
+    } );
+</script>
 {% endblock %}

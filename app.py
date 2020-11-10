@@ -79,16 +79,6 @@ def lookup_person(person_id):
 
         return render_template("person.html", html_content=person_content)
 
-@app.route("/events", methods=['GET'])
-def lookup_events():
-    output_format = requested_format(request.args, default="json")
-    df_events = get_events()
-
-    if output_format == "json":
-        return jsonify(df_events.to_dict(orient="records"))
-    else:
-        return render_template("events.html", data=df_events)
-
 @app.route("/facets", defaults={"category": None}, methods=["GET"])
 @app.route("/facets/<category>", methods=["GET"])
 def show_facets(category):

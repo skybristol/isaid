@@ -175,7 +175,8 @@ def package_html(
         justify="left",
         header=header_in_html,
         index=index_in_html,
-        classes=["table"]
+        classes=["table"],
+        table_id=collection
     )
 
     if markup:
@@ -191,17 +192,6 @@ def requested_format(args, default="json"):
             abort(400)
         else:
             return args["format"]
-
-def get_events():
-    sql = '''
-        SELECT DISTINCT reference
-        FROM claims
-        WHERE reference LIKE 'event:%'
-    '''
-
-    df = pd.read_sql_query(sql, con=conn)
-
-    return df
 
 def get_facets(categories=['expertise','raw_topics','fields_of_work']):
     facet_results = search_client.get_index('people').search('', {
