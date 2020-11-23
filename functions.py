@@ -11,10 +11,6 @@ import ast
 import hashlib
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
-conn = db.engine.connect().connection
 people_index = 'entities_people'
 
 search_client = meilisearch.Client(
@@ -23,68 +19,6 @@ search_client = meilisearch.Client(
 )
 
 facet_categories_people = search_client.get_index(people_index).get_attributes_for_faceting()
-
-isaid_data_collections = {
-    "directory": {
-        "table_name": "people_with_org_info",
-        "title": "Directory/Contact Information",
-        "description": "Properties pulled from the ScienceBase Directory for USGS employees and other people",
-        "display_properties": [
-            "displayname",
-            "jobtitle",
-            "url",
-            "organization_name",
-            "organization_url",
-            "region",
-            "city",
-            "state"
-        ],
-        "display_transpose": True,
-        "sort_by": None
-    },
-    "assets": {
-        "table_name": "identified_contacts",
-        "title": "Publications and Other Assets",
-        "description": "Scientific assets such as publications, datasets, models, instruments, and "
-                        "other articles. Linked to people through roles such as author/creator.",
-        "display_properties": [
-            "additionaltype",
-            "contact_type",
-            "contact_role",
-            "name",
-            "datepublished",
-            "url"
-        ],
-        "display_transpose": False,
-        "sort_by": "datepublished"
-    },
-    "claims": {
-        "table_name": "identified_claims_m",
-        "title": "Statements About a Person",
-        "description": "Statements or assertions about a person or asset that characterize the entities in "
-                        "various ways, including the connections between entities.",
-        "display_properties": [
-            "property_label",
-            "object_instance_of",
-            "object_label",
-            "claim_source",
-            "claim_created",
-            "date_qualifier",
-            "reference"
-        ],
-        "display_transpose": False,
-        "sort_by": ["property_label", "object_label"]
-    },
-    "wikidata_entities": {
-        "title": "WikiData Entity",
-        "description": "An entity in WikiData representing a person or scientific asset."
-    },
-    "wikidata_claims": {
-        "title": "WikiData Claims",
-        "description": "Statements or assertions about a person or other entity in WikiData that characterize "
-                        "them in various ways, including the connections between entities."
-    }
-}
 
 def lookup_parameter_person(person_id):
     if validators.email(person_id):

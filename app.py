@@ -1,5 +1,4 @@
 from flask import Flask, jsonify, render_template, request, flash, redirect, Markup, url_for, abort, send_file
-from flask_sqlalchemy import SQLAlchemy
 from functions import *
 from flask_bootstrap import Bootstrap
 from flask_nav import Nav
@@ -8,16 +7,9 @@ from flask_nav.elements import *
 def create_app():
     app = Flask(__name__)
     Bootstrap(app)
-
     return app
 
 app = create_app()
-
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
-conn = db.engine.connect().connection
-
 nav = Nav()
 
 @nav.navigation()
