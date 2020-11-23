@@ -8,17 +8,21 @@ from flask import Markup, Flask, jsonify, render_template, request, abort
 from flask_sqlalchemy import SQLAlchemy
 import meilisearch
 import ast
+import hashlib
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 conn = db.engine.connect().connection
+people_index = 'entities_people'
 
 search_client = meilisearch.Client(
     os.environ["MEILI_HTTP_ADDR"], 
     os.environ["MEILI_KEY"]
 )
+
+facet_categories_people = search_client.get_index(people_index).get_attributes_for_faceting()
 
 isaid_data_collections = {
     "directory": {
@@ -82,14 +86,6 @@ isaid_data_collections = {
     }
 }
 
-available_facets = [
-    'expertise',
-    'raw_topics',
-    'fields_of_work',
-    'jobtitle',
-    'organization_name'
-]
-
 def lookup_parameter_person(person_id):
     if validators.email(person_id):
         query_parameter = "identifier_email"
@@ -103,86 +99,76 @@ def lookup_parameter_person(person_id):
     
     return query_parameter
 
-def get_data(collection, query_param, query_param_value, db_con, target_output="json"):
-    selection_properties = {
-        "table_name": isaid_data_collections[collection]["table_name"],
-        "query_param": query_param,
-        "query_param_value": query_param_value
+def get_person(criteria):
+    query_param = lookup_parameter_person(criteria)
+
+    entity_doc = {
+        "criteria": criteria,
+        "query parameter": query_param,
+        "error": "No results found"
     }
 
-    if target_output == "html":
-        selection_properties["select_properties"] = ','.join(isaid_data_collections[collection]["display_properties"])
-    else:
-        selection_properties["select_properties"] = '*'
+    if query_param == "identifier_email":
+        try:
+            entity_id = hashlib.sha224(criteria.encode('utf-8')).hexdigest()
+            entity_doc = search_client.get_index(people_index).get_document(entity_id)
+        except:
+            try:
+                entity_id = hashlib.md5(criteria.encode('utf-8')).hexdigest()
+                entity_doc = search_client.get_index(people_index).get_document(entity_id)
+            except:
+                pass
 
-    sql = '''
-        SELECT %(select_properties)s
-        FROM %(table_name)s
-        WHERE %(query_param)s = '%(query_param_value)s'
-    ''' % selection_properties
-    
-    df = pd.read_sql_query(sql, con=db_con)
-
-    return df
-
-def package_json(collection, query_param, query_param_value, db_con):
-    df = get_data(collection, query_param, query_param_value, db_con)
-    return df.to_dict(orient="records")
-
-def package_html(
-    collection, 
-    query_param, 
-    query_param_value,
-    db_con, 
-    include_title=True, 
-    include_description=True, 
-    markup=True,
-    base_url=None
-):
-    index_in_html=False
-    header_in_html=True
-
-    df = get_data(collection, query_param, query_param_value, db_con, target_output="html")
-
-    if df.empty:
-        return str()
-    
-    if isaid_data_collections[collection]["display_transpose"]:
-        index_in_html=True
-        header_in_html=False
-        df = df.transpose()
-    
-    if isaid_data_collections[collection]["sort_by"] is not None:
-        df = df.sort_values(
-            by=isaid_data_collections[collection]["sort_by"],
-            ascending=False
+    elif query_param == "identifier_orcid":
+        results = search_client.get_index('entities_people').search(
+            criteria, 
+            {'filters': f'identifier_orcid = {criteria}'}
         )
-    
-    html_content = str()
 
-    if include_title:
-        html_content = html_content + f"<h2>{isaid_data_collections[collection]['title']}</h2>"
+        if len(results["hits"]) == 1:
+            entity_doc = results["hits"][0]
 
-    if include_description:
-        html_content = html_content + f"<p>{isaid_data_collections[collection]['description']}</p>"
-    
-    if base_url is not None:
-        html_content = html_content + f"<p><a href='{base_url}?collections={collection}&format=json'>View as JSON</a></p>"
+    if "error" in entity_doc:
+        entity_package = entity_doc
+    else:
+        entity_package = {
+            "entity": entity_doc
+        }
+        entity_package["entity"]["sources"] = [entity_doc["entity_source"]]
 
-    html_content = html_content + df.to_html(
-        render_links=True,
-        na_rep="NA",
-        justify="left",
-        header=header_in_html,
-        index=index_in_html,
-        classes=["table"],
-        table_id=collection
-    )
+        filters = " OR ".join(
+            [
+                f'subject_identifier_{k} = "{v}"' for k, v
+                in entity_doc["identifiers"].items() if k in ["email","orcid"]
+            ]
+        )
 
-    if markup:
-        html_content = Markup(html_content)
+        r_claims = search_client.get_index('entity_claims').search(
+            "",
+            {
+                'filters': f'{filters}'
+            }
+        )
 
-    return html_content
+        if len(r_claims["hits"]) > 0:
+            entity_package["claims"] = r_claims["hits"]
+
+            authored_works = [i for i in r_claims["hits"] if i["property_label"] == "author of"]
+            if authored_works: 
+                entity_package["authored works"] = list()
+                for item in authored_works:
+                    work_package = {
+                        "title": item["object_label"]
+                    }
+                    if "object_identifiers" in item and "url" in item["object_identifiers"]:
+                        work_package["link"] = item["object_identifiers"]["url"]
+                    entity_package["authored works"].append(work_package)
+
+            claim_sources = list(set([i["claim_source"] for i in r_claims["hits"]]))
+            if claim_sources:
+                entity_package["entity"]["sources"].extend([i for i in claim_sources if i != entity_package["entity"]["entity_source"]])
+
+    return entity_package
 
 def requested_format(args, default="json"):
     if "format" not in args:
@@ -193,27 +179,27 @@ def requested_format(args, default="json"):
         else:
             return args["format"]
 
-def get_facets(categories=['expertise','raw_topics','fields_of_work']):
-    facet_results = search_client.get_index('people').search('', {
+def get_facets(categories=facet_categories_people):
+    facet_results = search_client.get_index(people_index).search('', {
         'limit': 0,
         'facetsDistribution': categories,
     })
 
     return facet_results
 
-def search_people(q=str(), facet_filters=None, return_facets=available_facets, response_type="person_docs"):
+def search_people(q=str(), facet_filters=None, return_facets=facet_categories_people, response_type="person_docs"):
     if response_type == "facet_frequency":
         search_limit = 0
     else:
         search_limit = 10000
 
     if facet_filters is None:
-        search_results = search_client.get_index('people').search(q, {
+        search_results = search_client.get_index(people_index).search(q, {
             "limit": search_limit,
             "facetsDistribution": return_facets
         })
     else:
-        search_results = search_client.get_index('people').search(q, {
+        search_results = search_client.get_index(people_index).search(q, {
             "limit": search_limit,
             "facetsDistribution": return_facets,
             "facetFilters": facet_filters

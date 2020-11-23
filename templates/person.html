@@ -12,7 +12,118 @@
 {% endblock %}
 
 {% block content %}
-    {{html_content}}
+<h1>{{ data["entity"]["name"] }}</h1>
+<div>View as <a href="/person/{{ data['entity']['identifier_email'] }}?format=json">JSON</a></div>
+
+<table class="table">
+    <tr>
+        <td>Name</td>
+        <td>{{ data["entity"]["name"] }}</td>
+    </tr>
+    {% if "alternate_names" in data["entity"] %}
+    <tr>
+        <td>Alternate Names</td>
+        <td>{{ ", ".join(data["entity"]["alternate_names"]) }}</td>
+    </tr>
+    {% endif %}
+    {% if "identifier_email" in data["entity"] %}
+    <tr>
+        <td>Email</td>
+        <td><a href="mailto:{{ data['entity']['identifier_email'] }}">{{ data['entity']['identifier_email'] }}</a></td>
+    </tr>
+    {% endif %}
+    {% if "identifier_orcid" in data["entity"] %}
+    <tr>
+        <td>ORCID</td>
+        <td><a href="https://orcid.org/{{ data['entity']['identifier_orcid'] }}">{{ data['entity']['identifier_orcid'] }}</a></td>
+    </tr>
+    {% endif %}
+    {% if "url" in data["entity"] and data["entity"]["url"] %}
+    <tr>
+        <td>Web Links</td>
+        <td>
+            <ul>
+                {% for link in data["entity"]["url"] %}
+                    <li><a href="{{ link }}">{{ link }}</a></li>
+                {% endfor %}
+            </ul>
+        </td>
+    </tr>
+    {% endif %}
+    {% if "job title" in data["entity"] %}
+    <tr>
+        <td>Job Titles</td>
+        <td>{{ ", ".join(data["entity"]["job title"]) }}</td>
+    </tr>
+    {% endif %}
+    {% if "organization affiliation" in data["entity"] %}
+    <tr>
+        <td>Organizational Affiliations</td>
+        <td>{{ ", ".join(data["entity"]["organization affiliation"]) }}</td>
+    </tr>
+    {% endif %}
+    {% if "educational affiliation" in data["entity"] %}
+    <tr>
+        <td>Educational Affiliations</td>
+        <td>{{ ", ".join(data["entity"]["educational affiliation"]) }}</td>
+    </tr>
+    {% endif %}
+    {% if "authored works" in data %}
+    <tr>
+        <td>Authored Works</td>
+        <td>
+            <ul>
+                {% for item in data["authored works"] %}
+                    {% if "link" in item %}
+                    <li><a href="{{ item['link'] }}">{{ item['title'] }}</a></li>
+                    {% else %}
+                    <li>{{ item['title'] }}</li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </td>
+    </tr>
+    {% endif %}
+    {% if "expertise" in data["entity"] and data["entity"]["expertise"] %}
+    <tr>
+        <td>Expertise</td>
+        <td>{{ ", ".join(data["entity"]["expertise"]) }}</td>
+    </tr>
+    {% endif %}
+    {% if "funding organization" in data["entity"] and data["entity"]["funding organization"] %}
+    <tr>
+        <td>Funding Organizations</td>
+        <td>{{ ", ".join(data["entity"]["funding organization"]) }}</td>
+    </tr>
+    {% endif %}
+    {% if "funded project" in data["entity"] and data["entity"]["funded project"] %}
+    <tr>
+        <td>Funded Projects</td>
+        <td>{{ ", ".join(data["entity"]["funded project"]) }}</td>
+    </tr>
+    {% endif %}
+    {% if data["entity"]["sources"] %}
+    <tr>
+        <td>Information Sources</td>
+        <td>{{ ", ".join(data["entity"]["sources"]) }}</td>
+    </tr>
+    {% endif %}
+    {% if "reference" in data["entity"] %}
+    <tr>
+        <td>References</td>
+        <td>{{ ", ".join(data["entity"]["funded project"]) }}</td>
+    </tr>
+    {% endif %}
+    <tr>
+        <td>Entity Created</td>
+        <td>{{ data["entity"]["entity_created"] }}</td>
+    </tr>
+</table>
+
+<h1>Raw Claims</h1>
+
+{{ claims }}
+
 {% endblock %}
 
 {% block scripts %}
@@ -20,11 +131,6 @@
 <script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
 <script src="https://nightly.datatables.net/js/jquery.dataTables.js"></script>
 <script type="text/javascript" class="init">
-    $(document).ready(function() {
-        $('#assets').DataTable(
-        );
-    } );
-
     $(document).ready(function() {
         $('#claims').DataTable(
         );

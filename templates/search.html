@@ -29,30 +29,26 @@
         <thead>
             <tr>
                 <th>Name</th>
-                <th>Job Title</th>
-                <th>Email</th>
-                <th>Office Location</th>
-                <th>Fields of Work</th>
+                <th>Job Title(s)</th>
                 <th>Expertise</th>
+                <th>Organization Affiliations</th>
+                <th>Educational Affiliations</th>
             </tr>
         </thead>
         <tbody>
             {% for hit in data["hits"] %}
                 <tr>
-                    <td><a href="/person/{{ hit['email'] }}">{{ hit["displayname"] }}</a></td>
-                    <td>{{ hit["jobtitle"] }}</td>
-                    <td>{{ hit["email"] }}</td>
-                    <td>{{ hit["city"] }}, {{ hit["state"] }}</td>
+                    <td><a href="/person/{{ hit['identifier_email'] }}">{{ hit["name"] }}</a> ({{ hit["identifier_email"] }})</td>
                     <td>
-                        {% if "fields_of_work" in hit %}
+                        {% if "job title" in hit %}
                             <ul>
-                            {% for term in hit["fields_of_work"] %}
-                                <li><a href="/people?filters=fields_of_work:{{term}}">{{ term }}</a></li>
+                            {% for term in hit["job title"] %}
+                                <li><a href="/people?filters=job title:{{term}}">{{ term }}</a></li>
                             {% endfor %}
                             </ul>
                         {% endif %}
-                        </td>
-                        <td>
+                    </td>
+                    <td>
                     {% if "expertise" in hit %}
                         <ul>
                         {% for term in hit["expertise"] %}
@@ -61,17 +57,34 @@
                         </ul>
                     {% endif %}
                     </td>
-                </tr>
+                    <td>
+                        {% if "organization affiliation" in hit %}
+                            <ul>
+                            {% for term in hit["organization affiliation"] %}
+                                <li><a href="/people?filters=organization affiliation:{{term}}">{{ term }}</a></li>
+                            {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if "educational affiliation" in hit %}
+                            <ul>
+                            {% for term in hit["educational affiliation"] %}
+                                <li><a href="/people?filters=educational affiliation:{{term}}">{{ term }}</a></li>
+                            {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </td>
+                    </tr>
             {% endfor %}
         </tbody>
         <tfoot>
             <tr>
                 <th>Name</th>
                 <th>Job Title</th>
-                <th>Email</th>
-                <th>Office Location</th>
-                <th>Fields of Work</th>
                 <th>Expertise</th>
+                <th>Organization Affiliations</th>
+                <th>Educational Affiliations</th>
             </tr>
         </tfoot>
     </table>

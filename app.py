@@ -29,11 +29,11 @@ def isaid_navbar():
         Subgroup(
             'Facets',
             View('Expertise', 'show_facets', category='expertise'),
-            View('Job Titles', 'show_facets', category='jobtitle'),
-            View('Fields of Work', 'show_facets', category='fields_of_work'),
-            View('Organizations', 'show_facets', category='organization_name'),
-            View('Groups', 'show_facets', category='group_affiliations'),
-            View('Raw Topics from Data/Models', 'show_facets', category='raw_topics')
+            View('Job Title', 'show_facets', category='job title'),
+            View('Organizations', 'show_facets', category='organization affiliation'),
+            View('Groups', 'show_facets', category='group affiliation'),
+            View('Educational Institutions', 'show_facets', category='educational affiliation'),
+            View('Funding Organizations', 'show_facets', category='funding organization')
         )
     )
 
@@ -47,37 +47,32 @@ def home():
 def lookup_person(person_id):
     output_format = requested_format(request.args, default="html")
 
-    query_parameter = lookup_parameter_person(person_id)
-
-    if "collections" in request.args:
-        datasets = request.args["collections"].split(",")
-    else:
-        datasets = ["directory", "assets", "claims"]
+    person_record = get_person(person_id)
 
     if output_format == "json":
-        person_content = dict()
-        for data_section in datasets:
-            person_content[data_section] = package_json(
-                collection=data_section,
-                query_param=query_parameter,
-                query_param_value=person_id,
-                db_con=conn
-            )
-        
-        return jsonify(person_content)
-
+        return jsonify(person_record)
     else:
-        person_content = str()
-        for data_section in datasets:
-            person_content = person_content + package_html(
-                collection=data_section,
-                query_param=query_parameter,
-                query_param_value=person_id,
-                base_url=request.base_url,
-                db_con=conn
-            )
+        claims_table = pd.DataFrame(person_record["claims"]).to_html(
+            header=True,
+            index=False,
+            na_rep="NA",
+            justify="left",
+            table_id="claims",
+            classes=["table"],
+            render_links=True,
+            columns=[
+                "claim_created",
+                "claim_source",
+                "reference",
+                "date_qualifier",
+                "property_label",
+                "object_instance_of",
+                "object_label",
+                "object_identifiers"
+            ]
+        )
 
-        return render_template("person.html", html_content=person_content)
+        return render_template("person.html", data=person_record, claims=Markup(claims_table))
 
 @app.route("/facets", defaults={"category": None}, methods=["GET"])
 @app.route("/facets/<category>", methods=["GET"])
