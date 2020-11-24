@@ -47,27 +47,31 @@ def lookup_person(person_id):
     if output_format == "json":
         return jsonify(person_record)
     else:
-        claims_table = pd.DataFrame(person_record["claims"]).to_html(
-            header=True,
-            index=False,
-            na_rep="NA",
-            justify="left",
-            table_id="claims",
-            classes=["table"],
-            render_links=True,
-            columns=[
-                "claim_created",
-                "claim_source",
-                "reference",
-                "date_qualifier",
-                "property_label",
-                "object_instance_of",
-                "object_label",
-                "object_identifiers"
-            ]
-        )
+        if "claims" in person_record:
+            claims_table = pd.DataFrame(person_record["claims"]).to_html(
+                header=True,
+                index=False,
+                na_rep="NA",
+                justify="left",
+                table_id="claims",
+                classes=["table"],
+                render_links=True,
+                columns=[
+                    "claim_created",
+                    "claim_source",
+                    "reference",
+                    "date_qualifier",
+                    "property_label",
+                    "object_instance_of",
+                    "object_label",
+                    "object_identifiers"
+                ]
+            )
+            claims_content = Markup(claims_table)
+        else:
+            claims_content = None
 
-        return render_template("person.html", data=person_record, claims=Markup(claims_table))
+        return render_template("person.html", data=person_record, claims=claims_content)
 
 @app.route("/facets", defaults={"category": None}, methods=["GET"])
 @app.route("/facets/<category>", methods=["GET"])

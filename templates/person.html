@@ -133,9 +133,11 @@
 {% endfor %}
 {% endif %}
 
+{% if claims is not None %}
 <h1>Raw Claims</h1>
 
 {{ claims }}
+{% endif %}
 
 {% endblock %}
 
