@@ -120,6 +120,19 @@
     </tr>
 </table>
 
+{% if data["person_unique_terms"] %}
+<h1>Unique Values in Claims</h1>
+
+{% for facet, terms in data["person_unique_terms"].items() %}
+<h4>{{ facet }}</h4>
+    <ul>
+        {% for term in terms %}
+        <li>{{ term }}</li>
+        {% endfor %}
+    </ul>
+{% endfor %}
+{% endif %}
+
 <h1>Raw Claims</h1>
 
 {{ claims }}

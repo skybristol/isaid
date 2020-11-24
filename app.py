@@ -22,10 +22,13 @@ def isaid_navbar():
             'Facets',
             View('Expertise', 'show_facets', category='expertise'),
             View('Job Title', 'show_facets', category='job title'),
+            View('Field of Work', 'show_facets', category='field of work'),
             View('Organizations', 'show_facets', category='organization affiliation'),
             View('Groups', 'show_facets', category='group affiliation'),
             View('Educational Institutions', 'show_facets', category='educational affiliation'),
-            View('Funding Organizations', 'show_facets', category='funding organization')
+            View('Funding Organizations', 'show_facets', category='funding organization'),
+            View('Work Location', 'show_facets', category='work location'),
+            View('Collaborative Affiliations', 'show_facets', category='collaborative affiliation')
         )
     )
 

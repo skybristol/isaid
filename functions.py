@@ -34,6 +34,8 @@ def lookup_parameter_person(person_id):
     return query_parameter
 
 def get_person(criteria):
+    unique_facet_terms = get_facets(unique_terms=True)
+
     query_param = lookup_parameter_person(criteria)
 
     entity_doc = {
@@ -70,6 +72,11 @@ def get_person(criteria):
         }
         entity_package["entity"]["sources"] = [entity_doc["entity_source"]]
 
+        entity_package["person_unique_terms"] = dict()
+        for facet in unique_facet_terms.keys():
+            if facet in entity_doc and next((i for i in entity_doc[facet] if i in unique_facet_terms[facet]), None) is not None:
+                entity_package["person_unique_terms"][facet] = [i for i in entity_doc[facet] if i in unique_facet_terms[facet]]
+
         filters = " OR ".join(
             [
                 f'subject_identifier_{k} = "{v}"' for k, v
@@ -94,7 +101,7 @@ def get_person(criteria):
                     work_package = {
                         "title": item["object_label"]
                     }
-                    if "object_identifiers" in item and "url" in item["object_identifiers"]:
+                    if "object_identifiers" in item and item["object_identifiers"] is not None and "url" in item["object_identifiers"]:
                         work_package["link"] = item["object_identifiers"]["url"]
                     entity_package["authored works"].append(work_package)
 
@@ -113,11 +120,17 @@ def requested_format(args, default="json"):
         else:
             return args["format"]
 
-def get_facets(categories=facet_categories_people):
+def get_facets(categories=facet_categories_people, unique_terms=False):
     facet_results = search_client.get_index(people_index).search('', {
         'limit': 0,
         'facetsDistribution': categories,
     })
+
+    if unique_terms:
+        unique_facet_values = dict()
+        for k, v in facet_results["facetsDistribution"].items():
+            unique_facet_values[k] = [facet for facet, count in v.items() if count == 1]
+        return unique_facet_values
 
     return facet_results
 
