@@ -1,8 +1,20 @@
-from flask import Flask, jsonify, render_template, request, flash, redirect, Markup, url_for, abort, send_file
-from functions import *
+from flask import (
+    Flask, 
+    jsonify, 
+    render_template, 
+    request, 
+    flash, 
+    redirect, 
+    Markup, 
+    url_for, 
+    abort, 
+    send_file
+)
 from flask_bootstrap import Bootstrap
 from flask_nav import Nav
 from flask_nav.elements import *
+
+from functions import *
 
 def create_app():
     app = Flask(__name__)
@@ -122,4 +134,9 @@ def show_people():
         return jsonify(json_search_results)
     else:
         return render_template("search.html", data=search_results, query=query, filters=filters_criteria, api_url=api_url)
+
+@app.route("/identifiers/<id_type>", methods=["GET"])
+def query_identifiers(id_type):
+    if id_type == "dois_as_object":
+        return jsonify(get_doi_identifiers())
 
