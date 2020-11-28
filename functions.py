@@ -207,6 +207,17 @@ def get_doi_identifiers(limit=10000, remove_indexed=True):
     
     return unique_dois
 
+def get_orcid_identifiers():
+    orcid_search = search_client.get_index(people_index).get_documents(
+        {
+            "limit": 10000
+        }
+    )
+
+    orcid_ids = [i["identifier_orcid"] for i in orcid_search if "identifier_orcid" in i]
+
+    return orcid_ids
+
 def get_pub(doi):
     results = search_client.get_index(pubs_index).search(
         doi,

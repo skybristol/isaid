@@ -139,9 +139,19 @@ def show_people():
 def query_identifiers(id_type):
     if id_type == "dois_as_object":
         return jsonify(get_doi_identifiers())
+    elif id_type == "orcids_in_cache":
+        return jsonify(get_orcid_identifiers())
 
-@app.route("/doi/<doi_prefix>/<doi_suffix>", methods=["GET"])
-def pub(doi_prefix, doi_suffix):
+@app.route("/doi", methods=["GET"])
+def pub():
     output_format = requested_format(request.args, default="json")
-    doi_identifier = f"{doi_prefix}/{doi_suffix}"
-    return jsonify(get_pub(doi_identifier))
+
+    if "doi" not in request.args:
+        abort(400)
+    else:
+        cached_doi = get_pub(request.args["doi"])
+        if "error" in cached_doi:
+            abort(404)
+        else:
+            if output_format == "json":
+                return cached_doi
