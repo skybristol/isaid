@@ -9,9 +9,14 @@ from flask_sqlalchemy import SQLAlchemy
 import meilisearch
 import ast
 import hashlib
+import requests
 
-app = Flask(__name__)
 people_index = 'entities_people'
+pubs_index = 'entities_pubs'
+claims_index = 'entity_claims'
+GOOGLE_DISCOVERY_URL = (
+    "https://accounts.google.com/.well-known/openid-configuration"
+)
 
 search_client = meilisearch.Client(
     os.environ["MEILI_HTTP_ADDR"], 
@@ -19,6 +24,9 @@ search_client = meilisearch.Client(
 )
 
 facet_categories_people = search_client.get_index(people_index).get_attributes_for_faceting()
+
+def get_google_provider_cfg():
+    return requests.get(GOOGLE_DISCOVERY_URL).json()
 
 def lookup_parameter_person(person_id):
     if validators.email(person_id):
@@ -160,4 +168,62 @@ def search_people(q=str(), facet_filters=None, return_facets=facet_categories_pe
         search_response = search_results
 
     return search_response
+
+def dois_in_index():
+    entities_pubs = search_client.get_index(pubs_index).get_documents({'limit': 100000})
+    return [i['identifier_doi'] for i in entities_pubs]
+
+def get_doi_identifiers(limit=10000, remove_indexed=True):
+    result_list = list()
+    offset = 0
+    results = {
+        "hits": [1]
+    }
+    while results["hits"]:
+        results = search_client.get_index(claims_index).search(
+            'https://doi.org', 
+            {
+                'limit': limit, 
+                'offset': offset,
+                'attributesToRetrieve': ['object_identifiers']
+            }
+        )
+        if results["hits"]:
+            result_list.extend(results['hits'])
+        offset += limit
+
+    unique_dois = list(
+      set(
+          [
+           i["object_identifiers"]["doi"] for i in result_list 
+           if "object_identifiers" in i 
+           and i["object_identifiers"] is not None 
+           and "doi" in i["object_identifiers"]]
+        )
+      )
+    if remove_indexed:
+        existing_dois = dois_in_index()
+        unique_dois = [i for i in unique_dois if i not in existing_dois]
+    
+    return unique_dois
+
+def get_pub(doi):
+    results = search_client.get_index(pubs_index).search(
+        doi,
+        {
+            'filters': f'identifier_doi = "{doi}"'
+        }
+    )
+    if len(results["hits"]) == 1:
+        return results["hits"][0]
+    elif len(results["hits"]) > 1:
+        return {
+            "doi": doi,
+            "error": "More than one result returned for a single DOI. Something's wrong in the database."
+        }
+    else:
+        return {
+            "doi": doi,
+            "error": "No results found in cache."
+        }
 

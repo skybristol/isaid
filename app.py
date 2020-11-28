@@ -140,3 +140,8 @@ def query_identifiers(id_type):
     if id_type == "dois_as_object":
         return jsonify(get_doi_identifiers())
 
+@app.route("/doi/<doi_prefix>/<doi_suffix>", methods=["GET"])
+def pub(doi_prefix, doi_suffix):
+    output_format = requested_format(request.args, default="json")
+    doi_identifier = f"{doi_prefix}/{doi_suffix}"
+    return jsonify(get_pub(doi_identifier))
