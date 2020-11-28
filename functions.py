@@ -218,6 +218,17 @@ def get_orcid_identifiers():
 
     return orcid_ids
 
+def get_dois_in_cache():
+    pub_search = search_client.get_index(pubs_index).get_documents(
+        {
+            "limit": 100000
+        }
+    )
+
+    dois = [i["identifier_doi"] for i in pub_search if "identifier_doi" in i]
+
+    return dois
+
 def get_pub(doi):
     results = search_client.get_index(pubs_index).search(
         doi,

@@ -141,6 +141,8 @@ def query_identifiers(id_type):
         return jsonify(get_doi_identifiers())
     elif id_type == "orcids_in_cache":
         return jsonify(get_orcid_identifiers())
+    elif id_type == "dois_in_cache":
+        return jsonify(get_dois_in_cache())
 
 @app.route("/doi", methods=["GET"])
 def pub():
