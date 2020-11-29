@@ -169,11 +169,7 @@ def search_people(q=str(), facet_filters=None, return_facets=facet_categories_pe
 
     return search_response
 
-def dois_in_index():
-    entities_pubs = search_client.get_index(pubs_index).get_documents({'limit': 100000})
-    return [i['identifier_doi'] for i in entities_pubs]
-
-def get_doi_identifiers(limit=10000, remove_indexed=True):
+def dois_as_object(limit=10000, remove_indexed=True):
     result_list = list()
     offset = 0
     results = {
@@ -207,27 +203,37 @@ def get_doi_identifiers(limit=10000, remove_indexed=True):
     
     return unique_dois
 
-def get_orcid_identifiers():
-    orcid_search = search_client.get_index(people_index).get_documents(
-        {
-            "limit": 10000
-        }
-    )
-
-    orcid_ids = [i["identifier_orcid"] for i in orcid_search if "identifier_orcid" in i]
-
-    return orcid_ids
-
-def get_dois_in_cache():
-    pub_search = search_client.get_index(pubs_index).get_documents(
+def person_documents():
+    return search_client.get_index(people_index).get_documents(
         {
             "limit": 100000
         }
     )
 
-    dois = [i["identifier_doi"] for i in pub_search if "identifier_doi" in i]
+def orcids_in_cache():
+    return [
+        i["identifier_orcid"] for i in person_documents() 
+        if "identifier_orcid" in i
+    ]
 
-    return dois
+def emails_in_cache():
+    return [
+        i["identifier_email"] for i in person_documents() 
+        if "identifier_email" in i
+    ]
+
+def pubs_in_cache():
+    return search_client.get_index(pubs_index).get_documents(
+        {
+            "limit": 100000
+        }
+    )
+
+def dois_in_cache():
+    return [
+        i["identifier_doi"] for i in pubs_in_cache() 
+        if "identifier_doi" in i
+    ]
 
 def get_pub(doi):
     results = search_client.get_index(pubs_index).search(

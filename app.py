@@ -138,11 +138,13 @@ def show_people():
 @app.route("/identifiers/<id_type>", methods=["GET"])
 def query_identifiers(id_type):
     if id_type == "dois_as_object":
-        return jsonify(get_doi_identifiers())
+        return jsonify(dois_as_object())
     elif id_type == "orcids_in_cache":
-        return jsonify(get_orcid_identifiers())
+        return jsonify(orcids_in_cache())
     elif id_type == "dois_in_cache":
-        return jsonify(get_dois_in_cache())
+        return jsonify(dois_in_cache())
+    elif id_type == "emails_in_cache":
+        return jsonify(emails_in_cache())
 
 @app.route("/doi", methods=["GET"])
 def pub():
