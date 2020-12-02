@@ -76,7 +76,7 @@ def lookup_person(person_id):
                     "property_label",
                     "object_instance_of",
                     "object_label",
-                    "object_identifiers"
+                    "object_qualifier"
                 ]
             )
             claims_content = Markup(claims_table)
