@@ -108,10 +108,16 @@
         <td>{{ ", ".join(data["entity"]["sources"]) }}</td>
     </tr>
     {% endif %}
+    {% if "Inactive Date" in data["entity"] %}
+    <tr>
+        <td>Date Person Became Inactive with USGS</td>
+        <td>{{ data["entity"]["Inactive Date"] }}</td>
+    </tr>
+    {% endif %}
     {% if "reference" in data["entity"] %}
     <tr>
-        <td>References</td>
-        <td>{{ ", ".join(data["entity"]["funded project"]) }}</td>
+        <td>References for Claims</td>
+        <td>{{ ", ".join(data["entity"]["reference"]) }}</td>
     </tr>
     {% endif %}
     <tr>
