@@ -54,14 +54,10 @@ def get_person(criteria):
 
     if query_param == "identifier_email":
         try:
-            entity_id = hashlib.sha224(criteria.encode('utf-8')).hexdigest()
+            entity_id = hashlib.md5(criteria.encode('utf-8')).hexdigest()
             entity_doc = search_client.get_index(people_index).get_document(entity_id)
         except:
-            try:
-                entity_id = hashlib.md5(criteria.encode('utf-8')).hexdigest()
-                entity_doc = search_client.get_index(people_index).get_document(entity_id)
-            except:
-                pass
+            entity_doc = None
 
     elif query_param == "identifier_orcid":
         results = search_client.get_index('entities_people').search(
@@ -95,6 +91,7 @@ def get_person(criteria):
         r_claims = search_client.get_index('entity_claims').search(
             "",
             {
+                'limit': 1000,
                 'filters': f'{filters}'
             }
         )
