@@ -80,10 +80,12 @@ def lookup_person(person_id):
                 ]
             )
             claims_content = Markup(claims_table)
+            references = list(set([i["reference"] for i in person_record["claims"]]))
         else:
             claims_content = None
+            references = None
 
-        return render_template("person.html", data=person_record, claims=claims_content)
+        return render_template("person.html", data=person_record, claims=claims_content, references=references)
 
 @app.route("/facets", defaults={"category": None}, methods=["GET"])
 @app.route("/facets/<category>", methods=["GET"])

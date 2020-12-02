@@ -114,10 +114,16 @@
         <td>{{ data["entity"]["Inactive Date"] }}</td>
     </tr>
     {% endif %}
-    {% if "reference" in data["entity"] %}
+    {% if references %}
     <tr>
-        <td>References for Claims</td>
-        <td>{{ ", ".join(data["entity"]["reference"]) }}</td>
+        <td>References Used</td>
+        <td>
+            <ul>
+                {% for ref in references %}
+                <li><a href="{{ ref }}">{{ ref }}</a></li>
+                {% endfor %}
+            </ul>
+        </td>
     </tr>
     {% endif %}
     <tr>
