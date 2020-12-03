@@ -252,3 +252,11 @@ def get_pub(doi):
             "error": "No results found in cache."
         }
 
+def get_claims_info():
+    claims_facets = search_client.get_index('entity_claims').search(
+        "", 
+        {
+            "limit": 0, "facetsDistribution": ["*"]
+        }
+    )
+    return claims_facets["facetsDistribution"]

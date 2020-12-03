@@ -161,3 +161,12 @@ def pub():
         else:
             if output_format == "json":
                 return cached_doi
+
+@app.route("/claims/<info>", methods=["GET"])
+def claims_info(info):
+    output_format = requested_format(request.args, default="json")
+
+    if info == "stats":
+        claims_facets = get_claims_info()
+        if output_format == "json":
+            return claims_facets
