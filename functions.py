@@ -166,71 +166,63 @@ def search_people(q=str(), facet_filters=None, return_facets=facet_categories_pe
 
     return search_response
 
-def dois_as_object(limit=10000, remove_indexed=True):
-    result_list = list()
-    offset = 0
-    results = {
-        "hits": [1]
-    }
-    while results["hits"]:
-        results = search_client.get_index(claims_index).search(
-            'https://doi.org', 
-            {
-                'limit': limit, 
-                'offset': offset,
-                'attributesToRetrieve': ['object_identifiers']
-            }
-        )
-        if results["hits"]:
-            result_list.extend(results['hits'])
-        offset += limit
-
-    unique_dois = list(
-      set(
-          [
-           i["object_identifiers"]["doi"] for i in result_list 
-           if "object_identifiers" in i 
-           and i["object_identifiers"] is not None 
-           and "doi" in i["object_identifiers"]]
-        )
-      )
-    if remove_indexed:
-        existing_dois = dois_in_index()
-        unique_dois = [i for i in unique_dois if i not in existing_dois]
+def entity_identifiers():
+    offset=0
+    identifiers = list()
+    entities = search_client.get_index('entities').get_documents(
+        {
+            "limit": 500000,
+            "attributesToRetrieve": "identifier_orcid,identifier_email,identifier_sbid,identifier_doi,identifier_fbms_code,identifier_url"
+        }
+    )
+    for entity in entities:
+        identifiers.extend([v for k,v in entity.items()])
     
-    return unique_dois
+    return identifiers
 
-def person_documents():
-    return search_client.get_index(people_index).get_documents(
+def claim_identifiers(unresolved=True, identifier_type="all"):
+    id_facet_results = search_client.get_index('entity_claims').search(
+        "", 
         {
-            "limit": 100000
+            "limit": 0, 
+            "facetsDistribution": [
+                "subject_identifier_orcid",
+                "subject_identifier_email",
+                "subject_identifier_sbid",
+                "object_identifier_doi",
+                "object_identifier_fbms_code",
+                "object_identifier_url"
+            ]
         }
     )
+    
+    if unresolved:
+        entity_ids = entity_identifiers()
+    
+    id_listing = dict()
 
-def orcids_in_cache():
-    return [
-        i["identifier_orcid"] for i in person_documents() 
-        if "identifier_orcid" in i
-    ]
+    for id_type,identifiers in id_facet_results["facetsDistribution"].items():
+        id_position = id_type.split("_")[0]
+        id_name = id_type.split("_")[-1]
+        id_list = list(identifiers.keys())
 
-def emails_in_cache():
-    return [
-        i["identifier_email"] for i in person_documents() 
-        if "identifier_email" in i
-    ]
-
-def pubs_in_cache():
-    return search_client.get_index(pubs_index).get_documents(
-        {
-            "limit": 100000
-        }
-    )
-
-def dois_in_cache():
-    return [
-        i["identifier_doi"] for i in pubs_in_cache() 
-        if "identifier_doi" in i
-    ]
+        if id_position not in id_listing:
+            id_listing[id_position] = dict()
+        if unresolved:
+            id_listing[id_position][id_name] = [i for i in id_list if i not in entity_ids]
+        else:
+            id_listing[id_position][id_name] = id_list
+            
+    if identifier_type != "all":
+        filtered_ids = list()
+        for id_position, id_types in id_listing.items():
+            for id_type, ids in id_types.items():
+                if id_type == identifier_type:
+                    filtered_ids.extend(ids)
+        id_listing = list(set(filtered_ids))
+            
+    
+    return id_listing
 
 def get_pub(doi):
     results = search_client.get_index(pubs_index).search(

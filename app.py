@@ -139,14 +139,28 @@ def show_people():
 
 @app.route("/identifiers/<id_type>", methods=["GET"])
 def query_identifiers(id_type):
-    if id_type == "dois_as_object":
-        return jsonify(dois_as_object())
-    elif id_type == "orcids_in_cache":
-        return jsonify(orcids_in_cache())
-    elif id_type == "dois_in_cache":
-        return jsonify(dois_in_cache())
-    elif id_type == "emails_in_cache":
-        return jsonify(emails_in_cache())
+    if id_type == "unresolved_dois":
+        return jsonify(claim_identifiers(identifier_type="doi"))
+    elif id_type == "unresolved_emails":
+        return jsonify(claim_identifiers(identifier_type="email"))
+    elif id_type == "unresolved_orcids":
+        return jsonify(claim_identifiers(identifier_type="orcid"))
+    elif id_type == "unresolved_fbms_code":
+        return jsonify(claim_identifiers(identifier_type="fbms_code"))
+
+@app.route("/publication", methods=["GET"])
+def publication(identifier):
+    output_format = requested_format(request.args, default="json")
+
+    if "doi" in request.args:
+        cached_doi = get_pub(request.args["doi"])
+        if "error" in cached_doi:
+            abort(404)
+        else:
+            if output_format == "json":
+                return cached_doi
+            else:
+                render_template("publication.html", pub_meta=cached_doi)
 
 @app.route("/doi", methods=["GET"])
 def pub():
