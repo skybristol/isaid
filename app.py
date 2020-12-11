@@ -147,6 +147,8 @@ def query_identifiers(id_type):
         return jsonify(claim_identifiers(identifier_type="orcid"))
     elif id_type == "unresolved_fbms_code":
         return jsonify(claim_identifiers(identifier_type="fbms_code"))
+    elif id_type == "all":
+        return jsonify(claim_identifiers())
 
 @app.route("/publication", methods=["GET"])
 def publication(identifier):
