@@ -11,8 +11,8 @@ import ast
 import hashlib
 import requests
 
-people_index = 'entities_people'
-pubs_index = 'entities_pubs'
+people_index = 'entities'
+pubs_index = 'entities'
 claims_index = 'entity_claims'
 GOOGLE_DISCOVERY_URL = (
     "https://accounts.google.com/.well-known/openid-configuration"
