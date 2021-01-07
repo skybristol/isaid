@@ -145,17 +145,16 @@ def search_people(q=str(), facet_filters=None, return_facets=facet_categories_pe
     else:
         search_limit = 10000
 
-    if facet_filters is None:
-        search_results = search_client.get_index(people_index).search(q, {
-            "limit": search_limit,
-            "facetsDistribution": return_facets
-        })
-    else:
-        search_results = search_client.get_index(people_index).search(q, {
-            "limit": search_limit,
-            "facetsDistribution": return_facets,
-            "facetFilters": facet_filters
-        })
+    facet_filters_list = ["instance_of:Person"]
+
+    if facet_filters is not None:
+        facet_filters_list = facet_filters_list + facet_filters
+
+    search_results = search_client.get_index(people_index).search(q, {
+        "limit": search_limit,
+        "facetsDistribution": return_facets,
+        "facetFilters": facet_filters_list
+    })
 
     if response_type == "facet_frequency":
         search_response = dict()
