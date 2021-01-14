@@ -5,89 +5,88 @@
 <link href="https://nightly.datatables.net/css/jquery.dataTables.css" rel="stylesheet" type="text/css" />
 {% endblock %}
 
-{% block title %}iSAID People Search Results{% endblock %}
+{% block title %}iSAID Faceted Search{% endblock %}
 
 {% block navbar %}
 {{nav.isaid_navbar.render()}}
 {% endblock %}
 
 {% block content %}
-    <h1>Search results for people</h1>
-    <div>View as <a href="{{ api_url }}">JSON</a></div>
-    {% if query %}
-        <div>Search Criteria: {{ query }}</div>
-    {% endif %}
-    {% if filters %}
-        <ul>
-            {% for filter in filters %}
-            <li>{{ filter }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-
-    <table id="results" class="table">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Job Title(s)</th>
-                <th>Expertise</th>
-                <th>Organization Affiliations</th>
-                <th>Educational Affiliations</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for hit in data["hits"] %}
-                <tr>
-                    <td><a href="/person/{{ hit['identifier_email'] }}">{{ hit["name"] }}</a> ({{ hit["identifier_email"] }})</td>
-                    <td>
-                        {% if "job title" in hit %}
-                            <ul>
-                            {% for term in hit["job title"] %}
-                                <li><a href="/people?filters=job title:{{term}}">{{ term }}</a></li>
-                            {% endfor %}
-                            </ul>
-                        {% endif %}
-                    </td>
-                    <td>
-                    {% if "expertise" in hit %}
-                        <ul>
-                        {% for term in hit["expertise"] %}
-                            <li><a href="/people?filters=expertise:{{term}}">{{ term }}</a></li>
-                        {% endfor %}
-                        </ul>
+<div class="container">
+    <div class="row">
+      <div class="col-md-4">
+        {% if facets_in_search %}
+        <h1>Explore</h1>
+        {% for facet in facets_in_search %}
+        {% if sorted_facets[facet] %}
+        <h2>{{ facet }}</h2>
+            <div style="max-height: 300px;overflow: scroll;">
+            {% for key, value in sorted_facets[facet].items() %}
+                {% if facet in request.args and key in request.args[facet].split(",") %}
+                    <b>{{ key }}</b>
+                {% else %}
+                    {% if request.args %}
+                        <a href="{{ base_url }}&{{ facet }}={{ key }}">{{ key }}</a>
+                    {% else %}
+                        <a href="{{ base_url }}?{{ facet }}={{ key }}">{{ key }}</a>
                     {% endif %}
-                    </td>
-                    <td>
-                        {% if "organization affiliation" in hit %}
-                            <ul>
-                            {% for term in hit["organization affiliation"] %}
-                                <li><a href="/people?filters=organization affiliation:{{term}}">{{ term }}</a></li>
-                            {% endfor %}
-                            </ul>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if "educational affiliation" in hit %}
-                            <ul>
-                            {% for term in hit["educational affiliation"] %}
-                                <li><a href="/people?filters=educational affiliation:{{term}}">{{ term }}</a></li>
-                            {% endfor %}
-                            </ul>
-                        {% endif %}
-                    </td>
-                    </tr>
+                {% endif %}
+                : {{ value }}<br />
             {% endfor %}
-        </tbody>
-        <tfoot>
-            <tr>
-                <th>Name</th>
-                <th>Job Title</th>
-                <th>Expertise</th>
-                <th>Organization Affiliations</th>
-                <th>Educational Affiliations</th>
-            </tr>
-        </tfoot>
-    </table>
+            </div>
+        {% endif %}
+        {% endfor %}
+      {% endif %}
+      </div>
+      <div class="col-md-4">
+        <form name="search_form">
+            Search 
+            {% if "q" in request.args %}
+                <input type="text" name="q" value="{{ request.args['q'] }}" />
+            {% else %}
+                <input type="text" name="q" />
+            {% endif %}
+        </form>
+        <h1>Search Results ({{ search_results['nbHits'] }})</h1>
+        {% if facet_filters %}
+            <h3>Filters</h3>
+            <div>
+            
+            {% for filter in facet_filters %}
+                [<a href="{{ request.url.replace(filter.replace(':', '=').replace(' ', '%20'), '') }}">X</a>] {{ filter }}<br />
+            {% endfor %}
+            </div>
+        {% endif %}
+
+        <hr />
+
+        {% for result in search_results["hits"] %}
+            <div>
+                {{ result["category"] }} : 
+                {% if "email" in result["identifiers"] %}
+                    <a href="/person/{{ result['identifiers']['email'] }}">{{ result["name"] }}</a>
+                {% elif "orcid" in result["identifiers"] %}
+                    <a href="/person/{{ result['identifiers']['orcid'] }}">{{ result["name"] }}</a>
+                {% else %}
+                    {{ result["name"] }}
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <hr />
+
+        <div>
+            {% if previous_link %}
+                <a href="{{ previous_link }}"><< Previous</a>
+            {% endif %}
+            {% if next_link %}
+                <a href="{{ next_link }}">Next >></a>
+            {% endif %}
+        </div>
+
+      </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}

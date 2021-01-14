@@ -25,6 +25,16 @@ search_client = meilisearch.Client(
 
 facet_categories_people = search_client.get_index(people_index).get_attributes_for_faceting()
 
+entity_search_facets = [
+    'category',
+    'expertise',
+    'subject',
+    'job title',
+    'field of work',
+    'organization affiliation',
+    'work location'
+]
+
 def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
 
@@ -68,7 +78,7 @@ def get_person(criteria):
         if len(results["hits"]) == 1:
             entity_doc = results["hits"][0]
 
-    if "error" in entity_doc:
+    if entity_doc is None or "error" in entity_doc:
         entity_package = entity_doc
     else:
         entity_package = {
@@ -165,6 +175,23 @@ def search_people(q=str(), facet_filters=None, return_facets=facet_categories_pe
 
     return search_response
 
+def faceted_search(q=str(), facet_filters=None, return_facets=entity_search_facets, limit=20, offset=0):
+    search_params = {
+        'limit': limit,
+        'offset': offset,
+        'facetsDistribution': return_facets
+    }
+
+    if len(facet_filters) > 0:
+        search_params["facetFilters"] = facet_filters
+
+    search_results = search_client.get_index('entities').search(
+        q,
+        search_params
+    )
+
+    return search_results
+
 def entity_identifiers():
     offset=0
     identifiers = list()
@@ -251,3 +278,10 @@ def get_claims_info():
         }
     )
     return claims_facets["facetsDistribution"]
+
+def arg_stripper(args, leave_out, output_format="url_params"):
+    stripped_args = {k:v for k,v in args.items() if k not in leave_out}
+    if output_format == "url_params":
+        return "&".join([f"{k}={v}" for k, v in stripped_args.items()])
+    else:
+        return stripped_args
