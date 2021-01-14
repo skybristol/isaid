@@ -30,6 +30,7 @@ def isaid_navbar():
     return Navbar(
         'iSAID',
         View('Home', 'home'),
+        View('Search', 'search_entities'),
         View('People', 'show_people'),
         Subgroup(
             'Facets',
@@ -106,6 +107,7 @@ def search_entities():
         next_link = f"{url_for('search_entities')}?{arg_stripper(request.args, ['offset'])}&offset={next_offset}"
 
     base_url = f"{url_for('search_entities')}?{arg_stripper(request.args, ['offset'])}"
+    base_url_no_q = f"{url_for('search_entities')}?{arg_stripper(request.args, ['q'])}"
 
     if output_format == "json":
         return jsonify(search_results)
@@ -119,7 +121,8 @@ def search_entities():
             offset=offset,
             next_link=next_link,
             previous_link=previous_link,
-            base_url=base_url
+            base_url=base_url,
+            base_url_no_q=base_url_no_q
         )
 
 @app.route("/person/<person_id>", methods=['GET'])

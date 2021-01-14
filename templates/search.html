@@ -28,7 +28,7 @@
                     {% if request.args %}
                         <a href="{{ base_url }}&{{ facet }}={{ key }}">{{ key }}</a>
                     {% else %}
-                        <a href="{{ base_url }}?{{ facet }}={{ key }}">{{ key }}</a>
+                        <a href="{{ base_url }}{{ facet }}={{ key }}">{{ key }}</a>
                     {% endif %}
                 {% endif %}
                 : {{ value }}<br />
@@ -48,9 +48,12 @@
             {% endif %}
         </form>
         <h1>Search Results ({{ search_results['nbHits'] }})</h1>
-        {% if facet_filters %}
+        {% if facet_filters or "q" in request.args %}
             <h3>Filters</h3>
             <div>
+            {% if "q" in request.args %}
+                [<a href="{{ base_url_no_q }}">X</a>] {{ request.args["q"] }}<br />
+            {% endif %}
             
             {% for filter in facet_filters %}
                 [<a href="{{ request.url.replace(filter.replace(':', '=').replace(' ', '%20'), '') }}">X</a>] {{ filter }}<br />
