@@ -62,21 +62,12 @@ def get_person(criteria):
         "error": "No results found"
     }
 
-    if query_param == "identifier_email":
-        try:
-            entity_id = hashlib.md5(criteria.encode('utf-8')).hexdigest()
-            entity_doc = search_client.get_index(people_index).get_document(entity_id)
-        except:
-            entity_doc = None
-
-    elif query_param == "identifier_orcid":
-        results = search_client.get_index('entities_people').search(
-            criteria, 
-            {'filters': f'identifier_orcid = {criteria}'}
-        )
-
-        if len(results["hits"]) == 1:
-            entity_doc = results["hits"][0]
+    results = search_client.get_index('entities').search(
+        criteria, 
+        {'filters': f'{query_param} = "{criteria}"'}
+    )
+    if len(results["hits"]) == 1:
+        entity_doc = results["hits"][0]
 
     if entity_doc is None or "error" in entity_doc:
         entity_package = entity_doc

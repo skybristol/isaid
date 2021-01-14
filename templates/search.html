@@ -87,6 +87,14 @@
             {% endif %}
         </div>
 
+        <div>
+            {% if request.args %}
+                <a href="{{ request.url }}&format=json">View as JSON</a>
+            {% else %}
+                <a href="{{ request.url }}?format=json">View as JSON</a>
+            {% endif %}
+        </div>
+
       </div>
     </div>
 </div>
