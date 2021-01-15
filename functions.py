@@ -184,7 +184,6 @@ def faceted_search(q=str(), facet_filters=None, return_facets=entity_search_face
     return search_results
 
 def entity_identifiers():
-    offset=0
     identifiers = list()
     entities = search_client.get_index('entities').get_documents(
         {
@@ -237,7 +236,6 @@ def claim_identifiers(unresolved=True, identifier_type="all"):
                 if id_type == identifier_type:
                     filtered_ids.extend(ids)
         id_listing = list(set(filtered_ids))
-            
     
     return id_listing
 
