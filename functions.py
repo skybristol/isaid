@@ -46,6 +46,7 @@ reference_config = {
             ],
             "index": "ref_location_osm",
             "identifier_property": "osm_id",
+            "label_property": "display_name",
             "query_parameter": "aliases",
         },
         "geonames": {
@@ -56,6 +57,7 @@ reference_config = {
             ],
             "index": "ref_location_geonames",
             "identifier_property": "geonameId",
+            "label_property": "name",
             "query_parameter": "aliases",
         },
         "bing": {
@@ -66,6 +68,7 @@ reference_config = {
             ],
             "index": "ref_location_bing",
             "identifier_property": "address_hash",
+            "label_property": "name",
             "query_parameter": "aliases",
         },
     }
@@ -332,6 +335,7 @@ def reference_lookup(ref_type, value, expect=1):
                 "_reference_name": ref_source,
                 "_reference_title": config["title"],
                 "_date_created": str(datetime.utcnow().isoformat()),
+                "_label": item[config["label_property"]],
                 "_reference_url": url_for(
                     "reference_data", 
                     ref_type=ref_type, 
