@@ -260,3 +260,17 @@ def claims_info(info):
         claims_facets = get_claims_info()
         if output_format == "json":
             return claims_facets
+
+@app.route("/reference/<ref_type>/<ref_source>/<ref_id>", methods=["GET"])
+def reference_data(ref_type, ref_source, ref_id):
+    index_name = f"ref_{ref_type}_{ref_source}"
+    return jsonify(reference_record(index_name, ref_id))
+
+@app.route("/reference/lookup/<ref_type>", methods=["GET"])
+def reference_search(ref_type):
+    if "q" not in request.args:
+        abort(500)
+    
+    results = reference_lookup(ref_type, request.args["q"])
+
+    return jsonify(results)

@@ -4,12 +4,13 @@ import re
 from urllib.parse import urlparse
 import pandas as pd
 import psycopg2
-from flask import Markup, Flask, jsonify, render_template, request, abort
+from flask import Markup, Flask, jsonify, render_template, request, abort, url_for
 from flask_sqlalchemy import SQLAlchemy
 import meilisearch
 import ast
 import hashlib
 import requests
+from datetime import datetime
 
 people_index = 'entities'
 pubs_index = 'entities'
@@ -34,6 +35,41 @@ entity_search_facets = [
     'organization affiliation',
     'work location'
 ]
+
+reference_config = {
+    "location": {
+        "osm": {
+            "title": "Open Street Map Nominatum API",
+            "reference": [
+                "https://nominatim.org/",
+                "https://pypi.org/project/geopy/"
+            ],
+            "index": "ref_location_osm",
+            "identifier_property": "osm_id",
+            "query_parameter": "aliases",
+        },
+        "geonames": {
+            "title": "Geonames Geocode Web Service",
+            "reference": [
+                "http://www.geonames.org/export/geocode.html",
+                "https://pypi.org/project/geopy/"
+            ],
+            "index": "ref_location_geonames",
+            "identifier_property": "geonameId",
+            "query_parameter": "aliases",
+        },
+        "bing": {
+            "title": "Bing Maps Locations API",
+            "reference": [
+                "https://docs.microsoft.com/en-us/bingmaps/rest-services/locations/",
+                "https://pypi.org/project/geopy/"
+            ],
+            "index": "ref_location_bing",
+            "identifier_property": "address_hash",
+            "query_parameter": "aliases",
+        },
+    }
+}
 
 def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
@@ -274,3 +310,37 @@ def arg_stripper(args, leave_out, output_format="url_params"):
         return "&".join([f"{k}={v}" for k, v in stripped_args.items()])
     else:
         return stripped_args
+
+def reference_record(ref_index, ref_id):
+    try:
+        return search_client.get_index(ref_index).get_document(ref_id)
+    except:
+        return dict()
+
+def reference_lookup(ref_type, value, expect=1):
+    reference_results = list()
+    for ref_source, config in reference_config[ref_type].items():
+        results = search_client.get_index(config["index"]).search(
+            "",
+            {
+                "facetFilters": [f"{config['query_parameter']}:{value}"]
+            }
+        )
+
+        for item in results["hits"]:
+            item.update({
+                "_reference_name": ref_source,
+                "_reference_title": config["title"],
+                "_date_created": str(datetime.utcnow().isoformat()),
+                "_reference_url": url_for(
+                    "reference_data", 
+                    ref_type=ref_type, 
+                    ref_source=ref_source, 
+                    ref_id=item[config["identifier_property"]],
+                    _external=True
+                )
+            })
+        reference_results.extend(results["hits"])
+
+    return reference_results
+
