@@ -33,7 +33,8 @@ entity_search_facets = [
     'job title',
     'field of work',
     'organization affiliation',
-    'work location'
+    'work location',
+    'work location (raw)'
 ]
 
 reference_config = {
