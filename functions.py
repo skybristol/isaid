@@ -75,6 +75,44 @@ reference_config = {
     }
 }
 
+claims_sources = {
+    "orcid": {
+        "reference": "https://orcid.org",
+        "title": "Open Researcher and Contributor ID",
+        "index": "cache_orcid",
+        "id_prop": "orcid",
+        "description": "The ORCID system provides unique persistent identifiers for authors and other contributors to publications and other assets. They are used in the USGS for every person who authors something. The ORCID source provides information about authored works as well as organizational affiliations and other details."
+    },
+    "doi": {
+        "reference": "https://doi.org",
+        "title": "Digital Object Identifier",
+        "index": "cache_doi",
+        "id_prop": "doi_id",
+        "description": "The DOI system provides unique persistent identifiers for published articles/reports, datasets, models, and other assets. They are used for USGS reports, articles, datasets, and other scientific assets of importance in assessing the state of science through time."
+    },
+    "pw": {
+        "reference": "https://pubs.usgs.gov",
+        "title": "USGS Publications Warehouse",
+        "index": "cache_pw",
+        "id_prop": "indexId",
+        "description": "The USGS Publications Warehouse provides a catalog of all USGS authored Series Reports and journal articles published over the course of the institution's history."
+    },
+    "usgs_profile_inventory": {
+        "reference": "https://www.usgs.gov/connect/staff-profiles",
+        "title": "USGS Profile Page Inventory",
+        "index": "cache_usgs_profile_inventory",
+        "id_prop": "profile_id",
+        "description": "The USGS Staff Profiles system provides individual pages for USGS staff members sharing details about their work. The inventory provides a listing that is scraped to pull together the initial set of information from which profile page links are found."
+    },
+    "usgs_profiles": {
+        "reference": "https://www.usgs.gov/connect/staff-profiles",
+        "title": "USGS Profile Pages",
+        "index": "cache_usgs_profiles",
+        "id_prop": "profile_id",
+        "description": "The USGS Staff Profiles system provides individual pages for USGS staff members sharing details about their work. Individual profile pages are scraped for expertise terms, links to additional works, and other details."
+    }
+}
+
 def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
 
@@ -349,3 +387,24 @@ def reference_lookup(ref_type, value, expect=1):
 
     return reference_results
 
+def get_cached_source(source, identifier):
+    source_record = {
+        "_source": claims_sources[source]["title"],
+        "_source_reference": claims_sources[source]["reference"],
+        "_source_description": claims_sources[source]["description"]
+    }
+
+    search_result = search_client.get_index(claims_sources[source]["index"]).search(
+        '',
+        {
+            'filters': f'{claims_sources[source]["id_prop"]} = {identifier}',
+            'limit': 1
+        }
+    )
+
+    if len(search_result["hits"]) != 1:
+        return None
+
+    source_record.update(search_result["hits"][0])
+
+    return source_record
