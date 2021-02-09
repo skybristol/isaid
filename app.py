@@ -276,28 +276,15 @@ def reference_search(ref_type):
 
     return jsonify(results)
 
-@app.route("/cache/<source>/<identifier>", methods=["GET"])
-def cached_source_data(source, identifier):
+@app.route("/cache/<source>", methods=["GET"])
+def cached_source_data(source):
     if source not in claims_sources.keys():
         abort(500)
 
-    cached_record = get_cached_source(source, identifier)
-
-    if cached_record is None:
+    if "id" not in request.args:
         abort(500)
 
-    return jsonify(cached_record)
-
-@app.route("/cache/doi/<identifier_prefix>/<identifier_suffix>", methods=["GET"])
-def cached_source_doi(identifier_prefix, identifier_suffix):
-    identifier = "/".join([
-        identifier_prefix,
-        identifier_suffix
-    ])
-
-    identifier_string = hashlib.md5(identifier.encode('utf-8')).hexdigest()
-
-    cached_record = get_cached_source("doi", identifier_string)
+    cached_record = get_cached_source(source, request.args["id"])
 
     if cached_record is None:
         abort(500)

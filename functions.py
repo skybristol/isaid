@@ -87,7 +87,7 @@ claims_sources = {
         "reference": "https://doi.org",
         "title": "Digital Object Identifier",
         "index": "cache_doi",
-        "id_prop": "doi_id",
+        "id_prop": "DOI",
         "description": "The DOI system provides unique persistent identifiers for published articles/reports, datasets, models, and other assets. They are used for USGS reports, articles, datasets, and other scientific assets of importance in assessing the state of science through time."
     },
     "pw": {
@@ -101,14 +101,14 @@ claims_sources = {
         "reference": "https://www.usgs.gov/connect/staff-profiles",
         "title": "USGS Profile Page Inventory",
         "index": "cache_usgs_profile_inventory",
-        "id_prop": "profile_id",
+        "id_prop": "profile",
         "description": "The USGS Staff Profiles system provides individual pages for USGS staff members sharing details about their work. The inventory provides a listing that is scraped to pull together the initial set of information from which profile page links are found."
     },
     "usgs_profiles": {
         "reference": "https://www.usgs.gov/connect/staff-profiles",
         "title": "USGS Profile Pages",
         "index": "cache_usgs_profiles",
-        "id_prop": "profile_id",
+        "id_prop": "profile",
         "description": "The USGS Staff Profiles system provides individual pages for USGS staff members sharing details about their work. Individual profile pages are scraped for expertise terms, links to additional works, and other details."
     }
 }
@@ -397,7 +397,7 @@ def get_cached_source(source, identifier):
     search_result = search_client.get_index(claims_sources[source]["index"]).search(
         '',
         {
-            'filters': f'{claims_sources[source]["id_prop"]} = {identifier}',
+            'filters': f'{claims_sources[source]["id_prop"]} = "{identifier}"',
             'limit': 1
         }
     )
