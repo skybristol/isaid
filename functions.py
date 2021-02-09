@@ -397,6 +397,10 @@ def cached_source_docs():
     for source,docs in claims_sources.items():
         if "example_value" in docs:
             docs["example"] = f"{url_for('cached_source_data', source=source, _external=True)}?id={docs['example_value']}"
+
+        search_result = search_client.get_index(docs['index']).search('', {'limit': 0})
+        docs["docs_in_cache"] = search_result['nbHits']
+
         documentation[source] = docs
 
     return documentation
