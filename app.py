@@ -276,6 +276,10 @@ def reference_search(ref_type):
 
     return jsonify(results)
 
+@app.route('/cache', methods=["GET"])
+def cache_route_doc():
+    return jsonify(cached_source_docs())
+
 @app.route("/cache/<source>", methods=["GET"])
 def cached_source_data(source):
     if source not in claims_sources.keys():

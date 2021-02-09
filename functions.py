@@ -81,6 +81,7 @@ claims_sources = {
         "title": "Open Researcher and Contributor ID",
         "index": "cache_orcid",
         "id_prop": "orcid",
+        "example_value": "0000-0003-1682-4031",
         "description": "The ORCID system provides unique persistent identifiers for authors and other contributors to publications and other assets. They are used in the USGS for every person who authors something. The ORCID source provides information about authored works as well as organizational affiliations and other details."
     },
     "doi": {
@@ -88,6 +89,7 @@ claims_sources = {
         "title": "Digital Object Identifier",
         "index": "cache_doi",
         "id_prop": "DOI",
+        "example_value": "10.5334/dsj-2018-015",
         "description": "The DOI system provides unique persistent identifiers for published articles/reports, datasets, models, and other assets. They are used for USGS reports, articles, datasets, and other scientific assets of importance in assessing the state of science through time."
     },
     "pw": {
@@ -95,6 +97,7 @@ claims_sources = {
         "title": "USGS Publications Warehouse",
         "index": "cache_pw",
         "id_prop": "indexId",
+        "example_value": "ofr20161165",
         "description": "The USGS Publications Warehouse provides a catalog of all USGS authored Series Reports and journal articles published over the course of the institution's history."
     },
     "usgs_profile_inventory": {
@@ -102,6 +105,7 @@ claims_sources = {
         "title": "USGS Profile Page Inventory",
         "index": "cache_usgs_profile_inventory",
         "id_prop": "profile",
+        "example_value": "https://usgs.gov/staff-profiles/layne-adams",
         "description": "The USGS Staff Profiles system provides individual pages for USGS staff members sharing details about their work. The inventory provides a listing that is scraped to pull together the initial set of information from which profile page links are found."
     },
     "usgs_profiles": {
@@ -109,6 +113,7 @@ claims_sources = {
         "title": "USGS Profile Pages",
         "index": "cache_usgs_profiles",
         "id_prop": "profile",
+        "example_value": "https://usgs.gov/staff-profiles/layne-adams",
         "description": "The USGS Staff Profiles system provides individual pages for USGS staff members sharing details about their work. Individual profile pages are scraped for expertise terms, links to additional works, and other details."
     }
 }
@@ -386,6 +391,15 @@ def reference_lookup(ref_type, value, expect=1):
         reference_results.extend(results["hits"])
 
     return reference_results
+
+def cached_source_docs():
+    documentation = dict()
+    for source,docs in claims_sources.items():
+        if "example_value" in docs:
+            docs["example"] = f"{url_for('cached_source_data', source=source, _external=True)}?id={docs['example_value']}"
+        documentation[source] = docs
+
+    return documentation
 
 def get_cached_source(source, identifier):
     source_record = {
