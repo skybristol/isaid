@@ -291,6 +291,6 @@ def cached_source_data(source):
     cached_record = get_cached_source(source, request.args["id"])
 
     if cached_record is None:
-        abort(500)
+        abort(404)
 
     return jsonify(cached_record)
