@@ -475,11 +475,17 @@ def claims_by_id(id_value, faceted_identifiers=['email','orcid','usgs_web_url','
         '',
         {
             'limit': 10000,
-            'facetFilters': [all_identifiers]
+            'facetFilters': [all_identifiers],
+            'facetsDistribution': [
+                'object_instance_of',
+                'subject_instance_of',
+                'property_label',
+                'claim_source'
+            ]
         }
     )
-    
-    return better_search_results["hits"]
+
+    return better_search_results
 
 def actionable_id(identifier_string, return_resolver=True):
     if validators.url(identifier_string):
