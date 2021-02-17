@@ -294,3 +294,12 @@ def cached_source_data(source):
         abort(404)
 
     return jsonify(cached_record)
+
+@app.route("/entity_claims")
+def entity_claims():
+    if "id" not in request.args:
+        abort(500)
+
+    entity_results = claims_by_id(request.args["id"])
+
+    return jsonify(entity_results)

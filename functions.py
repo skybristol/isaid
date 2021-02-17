@@ -426,3 +426,92 @@ def get_cached_source(source, identifier):
     source_record.update(search_result["hits"][0])
 
     return source_record
+
+def claims_by_id(id_value, faceted_identifiers=['email','orcid','usgs_web_url','doi'], return_ids_only=False):
+    check_id = actionable_id(id_value, return_resolver=False)
+
+    if check_id is None or list(check_id.keys())[0] not in faceted_identifiers:
+        return {"id": id_value, "error": "Not an actionable identifier"}
+    
+    facet_filters = [
+        f"subject_identifier_{list(check_id.keys())[0]}:{list(check_id.values())[0]}",
+        f"object_identifier_{list(check_id.keys())[0]}:{list(check_id.values())[0]}",
+    ]
+    
+    preliminary_search_results = search_client.get_index('claims').search(
+        '',
+        {
+            'limit': 1000,
+            'facetFilters': [facet_filters],
+            'attributesToRetrieve': [
+                'subject_identifiers',
+                'object_identifiers'
+            ]
+        }
+    )
+
+    if len(preliminary_search_results["hits"]) == 0:
+        return {"id": id_value, "error": "No results found for ID"}
+
+    all_identifiers = list()
+    for hit in preliminary_search_results["hits"]:
+        possible_identifiers = list()
+        if "subject_identifiers" in hit and id_value in hit["subject_identifiers"].values():
+            for k,v in hit["subject_identifiers"].items():
+                if k in faceted_identifiers:
+                    possible_identifiers.extend([f"subject_identifier_{k}:{v}",f"object_identifier_{k}:{v}"])
+        if "object_identifiers" in hit and id_value in hit["object_identifiers"].values():
+            for k,v in hit["object_identifiers"].items():
+                if k in faceted_identifiers:
+                    possible_identifiers.extend([f"object_identifier_{k}:{v}",f"subject_identifier_{k}:{v}"])
+        all_identifiers.extend(possible_identifiers)
+
+    all_identifiers = list(set(all_identifiers))
+    
+    if return_ids_only:
+        return all_identifiers
+
+    better_search_results = search_client.get_index('claims').search(
+        '',
+        {
+            'limit': 10000,
+            'facetFilters': [all_identifiers]
+        }
+    )
+    
+    return better_search_results["hits"]
+
+def actionable_id(identifier_string, return_resolver=True):
+    if validators.url(identifier_string):
+        if "/staff-profiles/" in identifier_string.lower():
+            return {
+                "usgs_web_url": identifier_string
+            }
+
+    if validators.email(identifier_string):
+        return {
+            "email": identifier_string
+        }
+
+    identifiers = {
+        "doi": {
+            "pattern": r"10.\d{4,9}\/[\S]+$",
+            "resolver": "https://doi.org/"
+        },
+        "orcid": {
+            "pattern": r"\d{4}-\d{4}-\d{4}-\w{4}",
+            "resolver": "https://orcid.org/"
+        }
+    }
+    for k,v in identifiers.items():
+        search = re.search(v["pattern"], identifier_string)
+        if search:
+            d_identifier = {
+                k: search.group()
+            }
+            if return_resolver and v["resolver"] is not None:
+                d_identifier["url"] = f"{v['resolver']}{search.group().upper()}"
+
+            return d_identifier
+
+    return 
