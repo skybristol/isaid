@@ -27,15 +27,17 @@ search_client = meilisearch.Client(
 facet_categories_people = search_client.get_index(people_index).get_attributes_for_faceting()
 
 entity_search_facets = [
-    'category',
-    'expertise',
-    'subject',
-    'job title',
-    'field of work',
-    'organization affiliation',
-    'work location',
-    'work location (raw)'
-]
+        "instance_of",
+        "job title",
+        "educational affiliation",
+        "professional affiliation",
+        "employed by",
+        "has expertise",
+        "addresses subject",
+        "published in",
+        "funded by",
+        "participated in event"
+    ]
 
 reference_config = {
     "location": {
@@ -487,7 +489,7 @@ def claims_by_id(id_value, faceted_identifiers=['email','orcid','usgs_web_url','
 
     return better_search_results
 
-def actionable_id(identifier_string, return_resolver=True):
+def actionable_id(identifier_string, return_resolver=False):
     if validators.url(identifier_string):
         if "/staff-profiles/" in identifier_string.lower():
             return {
@@ -520,4 +522,25 @@ def actionable_id(identifier_string, return_resolver=True):
 
             return d_identifier
 
-    return 
+    return
+
+def get_entity(identifier):
+    check_id = actionable_id(identifier)
+
+    if check_id is None:
+        return
+
+    else:
+        facet_filter = f"identifier_{str(next(iter(check_id)))}:{identifier}"
+
+        entity = search_client.get_index('entities').search(identifier, {'facetFilters': [facet_filter]})
+
+        if len(entity["hits"]) == 0:
+            return
+        
+        claims = claims_by_id(identifier)
+
+        return {
+            "entity": entity["hits"][0],
+            "claims": claims["hits"]
+        }

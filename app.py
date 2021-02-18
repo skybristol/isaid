@@ -32,19 +32,19 @@ def isaid_navbar():
         'iSAID',
         View('Home', 'home'),
         View('Search', 'search_entities'),
-        View('People', 'show_people'),
-        Subgroup(
-            'Facets',
-            View('Expertise', 'show_facets', category='expertise'),
-            View('Job Title', 'show_facets', category='job title'),
-            View('Field of Work', 'show_facets', category='field of work'),
-            View('Organizations', 'show_facets', category='organization affiliation'),
-            View('Groups', 'show_facets', category='group affiliation'),
-            View('Educational Institutions', 'show_facets', category='educational affiliation'),
-            View('Funding Organizations', 'show_facets', category='funding organization'),
-            View('Work Location', 'show_facets', category='work location'),
-            View('Collaborative Affiliations', 'show_facets', category='collaborative affiliation')
-        )
+#        View('People', 'show_people'),
+#        Subgroup(
+#            'Facets',
+#            View('Expertise', 'show_facets', category='expertise'),
+#            View('Job Title', 'show_facets', category='job title'),
+#            View('Field of Work', 'show_facets', category='field of work'),
+#            View('Organizations', 'show_facets', category='organization affiliation'),
+#            View('Groups', 'show_facets', category='group affiliation'),
+#            View('Educational Institutions', 'show_facets', category='educational affiliation'),
+#            View('Funding Organizations', 'show_facets', category='funding organization'),
+#            View('Work Location', 'show_facets', category='work location'),
+#            View('Collaborative Affiliations', 'show_facets', category='collaborative affiliation')
+#        )
     )
 
 nav.init_app(app)
@@ -125,6 +125,68 @@ def search_entities():
             base_url=base_url,
             base_url_no_q=base_url_no_q
         )
+
+@app.route("/entity", methods=['GET'])
+def lookup_entity():
+    if "id" not in request.args:
+        abort(500)
+
+    output_format = requested_format(request.args, default="html")
+
+    entity = get_entity(request.args["id"])
+
+    if entity is None:
+        abort(404)
+
+    if output_format == "json":
+        return jsonify(entity)
+    else:
+        authored_works = list()
+        for work in [i for i in entity["claims"] if i["property_label"] == "author of"]:
+            d_work = {
+                "title": work["object_label"]
+            }
+            if "object_identifier_doi" in work:
+                d_work["url"] = f"https://doi.org/{work['object_identifier_doi']}"
+            authored_works.append(d_work)
+
+        if authored_works:
+            entity["authored_works"] = authored_works
+
+        edited_works = list()
+        for work in [i for i in entity["claims"] if i["property_label"] == "editor of"]:
+            d_work = {
+                "title": work["object_label"]
+            }
+            if "object_identifier_doi" in work:
+                d_work["url"] = f"https://doi.org/{work['object_identifier_doi']}"
+            edited_works.append(d_work)
+
+        if edited_works:
+            entity["edited_works"] = edited_works
+
+        claims_table = pd.DataFrame(entity["claims"]).to_html(
+            header=True,
+            index=False,
+            na_rep="NA",
+            justify="left",
+            table_id="claims",
+            classes=["table"],
+            render_links=True,
+            columns=[
+                "claim_created",
+                "claim_source",
+                "reference",
+                "date_qualifier",
+                "property_label",
+                "object_instance_of",
+                "object_label",
+                "object_qualifier"
+            ]
+        )
+        claims_content = Markup(claims_table)
+
+        return render_template("entity.html", data=entity, claims=claims_content)
 
 @app.route("/person/<person_id>", methods=['GET'])
 def lookup_person(person_id):

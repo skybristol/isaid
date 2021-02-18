@@ -1,0 +1,231 @@
+{% extends "bootstrap/base.html" %}
+
+{% block styles %}
+{{ super() }}
+<link href="https://nightly.datatables.net/css/jquery.dataTables.css" rel="stylesheet" type="text/css" />
+{% endblock %}
+
+{% block title %}iSAID Entity Details{% endblock %}
+
+{% block navbar %}
+{{nav.isaid_navbar.render()}}
+{% endblock %}
+
+{% block content %}
+<h1>{{ data["entity"]["name"] }}</h1>
+<div>View as <a href="/entity?id={{ data['entity']['identifier_email'] }}&format=json">JSON</a></div>
+
+<table class="table">
+    <tr>
+        <td>Name</td>
+        <td>{{ data["entity"]["name"] }}</td>
+    </tr>
+    {% if "alternate_names" in data["entity"] %}
+    <tr>
+        <td>Alternate Names</td>
+        <td>{{ ", ".join(data["entity"]["alternate_names"]) }}</td>
+    </tr>
+    {% endif %}
+    {% if "identifier_email" in data["entity"] %}
+    <tr>
+        <td>Email</td>
+        <td><a href="mailto:{{ data['entity']['identifier_email'] }}">{{ data['entity']['identifier_email'] }}</a></td>
+    </tr>
+    {% endif %}
+    {% if "identifier_orcid" in data["entity"] %}
+    <tr>
+        <td>ORCID</td>
+        <td><a href="https://orcid.org/{{ data['entity']['identifier_orcid'] }}">{{ data['entity']['identifier_orcid'] }}</a></td>
+    </tr>
+    {% endif %}
+    {% if "identifier_doi" in data["entity"] %}
+    <tr>
+        <td>DOI</td>
+        <td><a href="https://doi.org/{{ data['entity']['identifier_doi'] }}">{{ data['entity']['identifier_doi'] }}</a></td>
+    </tr>
+    {% endif %}
+    {% if "job title" in data["entity"] %}
+    <tr>
+        <td>Job Titles</td>
+        <td>
+            <ul>
+                {% for title in data["entity"]["job title"] %}
+                <li>{{ title }}</a></li>
+                {% endfor %}
+            </ul>
+        </td>
+    </tr>
+    {% endif %}
+    {% if "employed by" in data["entity"] %}
+    <tr>
+        <td>Employer</td>
+        <td>
+            <ul>
+                {% for org in data["entity"]["employed by"] %}
+                <li>{{ org }}</a></li>
+                {% endfor %}
+            </ul>
+        </td>
+    </tr>
+    {% endif %}
+    {% if "professional affiliation" in data["entity"] %}
+    <tr>
+        <td>Professional Affiliations</td>
+        <td>
+            <ul>
+                {% for org in data["entity"]["professional affiliation"] %}
+                <li>{{ org }}</a></li>
+                {% endfor %}
+            </ul>
+        </td>
+    </tr>
+    {% endif %}
+    {% if "educational affiliation" in data["entity"] %}
+    <tr>
+        <td>Educational Affiliations</td>
+        <td>
+            <ul>
+                {% for org in data["entity"]["educational affiliation"] %}
+                <li>{{ org }}</a></li>
+                {% endfor %}
+            </ul>
+        </td>
+    </tr>
+    {% endif %}
+    {% if "published in" in data["entity"] %}
+    <tr>
+        <td>Published In</td>
+        <td>
+            <ul>
+                {% for pub in data["entity"]["published in"] %}
+                <li>{{ pub }}</a></li>
+                {% endfor %}
+            </ul>
+        </td>
+    </tr>
+    {% endif %}
+    {% if "funded by" in data["entity"] %}
+    <tr>
+        <td>Funded By</td>
+        <td>
+            <ul>
+                {% for org in data["entity"]["funded by"] %}
+                <li>{{ org }}</a></li>
+                {% endfor %}
+            </ul>
+        </td>
+    </tr>
+    {% endif %}
+    {% if "participated in event" in data["entity"] %}
+    <tr>
+        <td>Events Participated In</td>
+        <td>
+            <ul>
+                {% for event in data["entity"]["participated in event"] %}
+                <li>{{ event }}</a></li>
+                {% endfor %}
+            </ul>
+        </td>
+    </tr>
+    {% endif %}
+    {% if "authored_works" in data %}
+    <tr>
+        <td>Authored Works</td>
+        <td>
+            <ul>
+                {% for item in data["authored_works"] %}
+                    {% if "url" in item %}
+                    <li><a href="{{ item['url'] }}">{{ item['title'] }}</a></li>
+                    {% else %}
+                    <li>{{ item['title'] }}</li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </td>
+    </tr>
+    {% endif %}
+    {% if "edited_works" in data %}
+    <tr>
+        <td>Edited Works</td>
+        <td>
+            <ul>
+                {% for item in data["edited_works"] %}
+                    {% if "url" in item %}
+                    <li><a href="{{ item['url'] }}">{{ item['title'] }}</a></li>
+                    {% else %}
+                    <li>{{ item['title'] }}</li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </td>
+    </tr>
+    {% endif %}
+    {% if "has expertise" in data["entity"] %}
+    <tr>
+        <td>Expertise</td>
+        <td>
+            <ul>
+                {% for term in data["entity"]["has expertise"] %}
+                <li>{{ term }}</a></li>
+                {% endfor %}
+            </ul>
+        </td>
+    </tr>
+    {% endif %}
+    {% if "addresses subject" in data["entity"] %}
+    <tr>
+        <td>Subjects Addressed</td>
+        <td>
+            <ul>
+                {% for subject in data["entity"]["addresses subject"] %}
+                <li>{{ subject }}</a></li>
+                {% endfor %}
+            </ul>
+        </td>
+    </tr>
+    {% endif %}
+    <tr>
+        <td>Information Sources</td>
+        <td>
+            <ul>
+                {% for source in data["entity"]["sources"] %}
+                <li>{{ source }}</a></li>
+                {% endfor %}
+            </ul>
+        </td>
+    </tr>
+    <tr>
+        <td>References Used</td>
+        <td>
+            <ul>
+                {% for ref in data["entity"]["references"] %}
+                <li><a href="{{ ref }}">{{ ref }}</a></li>
+                {% endfor %}
+            </ul>
+        </td>
+    </tr>
+    <tr>
+        <td>Entity Updated</td>
+        <td>{{ data["entity"]["entity_updated"] }}</td>
+    </tr>
+</table>
+
+{% if claims %}
+<h1>Raw Claims</h1>
+
+{{ claims }}
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+{{super()}}
+<script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+<script src="https://nightly.datatables.net/js/jquery.dataTables.js"></script>
+<script type="text/javascript" class="init">
+    $(document).ready(function() {
+        $('#claims').DataTable(
+        );
+    } );
+</script>
+{% endblock %}
