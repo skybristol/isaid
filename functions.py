@@ -27,7 +27,7 @@ search_client = meilisearch.Client(
 facet_categories_people = search_client.get_index(people_index).get_attributes_for_faceting()
 
 entity_search_facets = [
-        "instance_of",
+        "category",
         "job title",
         "educational affiliation",
         "professional affiliation",
