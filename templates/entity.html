@@ -13,7 +13,7 @@
 
 {% block content %}
 <h1>{{ data["entity"]["name"] }}</h1>
-<div>View as <a href="/entity?id={{ data['entity']['identifier_email'] }}&format=json">JSON</a></div>
+<div>View as <a href="/entity?id={{ request.args['id'] }}&format=json">JSON</a></div>
 
 <table class="table">
     <tr>
@@ -184,16 +184,18 @@
         </td>
     </tr>
     {% endif %}
+    {% if cached_source_links %}
     <tr>
-        <td>Information Sources</td>
+        <td>Cached Sources</td>
         <td>
             <ul>
-                {% for source in data["entity"]["sources"] %}
-                <li>{{ source }}</a></li>
+                {% for source in cached_source_links %}
+                <li><a href="{{ source['link'] }}">{{ source['name'] }}</a></li>
                 {% endfor %}
             </ul>
         </td>
     </tr>
+    {% endif %}
     <tr>
         <td>References Used</td>
         <td>

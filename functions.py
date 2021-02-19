@@ -81,126 +81,54 @@ claims_sources = {
     "orcid": {
         "reference": "https://orcid.org",
         "title": "Open Researcher and Contributor ID",
+        "source_title": "ORCID",
         "index": "cache_orcid",
         "id_prop": "orcid",
+        "entity_id": "orcid",
         "example_value": "0000-0003-1682-4031",
         "description": "The ORCID system provides unique persistent identifiers for authors and other contributors to publications and other assets. They are used in the USGS for every person who authors something. The ORCID source provides information about authored works as well as organizational affiliations and other details."
     },
     "doi": {
         "reference": "https://doi.org",
         "title": "Digital Object Identifier",
+        "source_title": "DOI",
         "index": "cache_doi",
         "id_prop": "DOI",
+        "entity_id": "doi",
         "example_value": "10.5334/dsj-2018-015",
         "description": "The DOI system provides unique persistent identifiers for published articles/reports, datasets, models, and other assets. They are used for USGS reports, articles, datasets, and other scientific assets of importance in assessing the state of science through time."
     },
     "pw": {
         "reference": "https://pubs.usgs.gov",
         "title": "USGS Publications Warehouse",
+        "source_title": "Pubs Warehouse",
         "index": "cache_pw",
         "id_prop": "indexId",
+        "entity_id": "usgs_pw_index_id",
         "example_value": "ofr20161165",
         "description": "The USGS Publications Warehouse provides a catalog of all USGS authored Series Reports and journal articles published over the course of the institution's history."
     },
     "usgs_profile_inventory": {
         "reference": "https://www.usgs.gov/connect/staff-profiles",
         "title": "USGS Profile Page Inventory",
+        "source_title": "USGS Profile Inventory",
         "index": "cache_usgs_profile_inventory",
         "id_prop": "profile",
+        "entity_id": "usgs_web_url",
         "example_value": "https://usgs.gov/staff-profiles/layne-adams",
         "description": "The USGS Staff Profiles system provides individual pages for USGS staff members sharing details about their work. The inventory provides a listing that is scraped to pull together the initial set of information from which profile page links are found."
     },
     "usgs_profiles": {
         "reference": "https://www.usgs.gov/connect/staff-profiles",
         "title": "USGS Profile Pages",
+        "source_title": "USGS Profile Page",
         "index": "cache_usgs_profiles",
         "id_prop": "profile",
+        "entity_id": "usgs_web_url",
         "example_value": "https://usgs.gov/staff-profiles/layne-adams",
         "description": "The USGS Staff Profiles system provides individual pages for USGS staff members sharing details about their work. Individual profile pages are scraped for expertise terms, links to additional works, and other details."
     }
 }
-
-def get_google_provider_cfg():
-    return requests.get(GOOGLE_DISCOVERY_URL).json()
-
-def lookup_parameter_person(person_id):
-    if validators.email(person_id):
-        query_parameter = "identifier_email"
-    else:
-        if re.match(r"\d{4}-\d{4}-\d{4}-\d{4}", person_id):
-            query_parameter = "identifier_orcid"
-        elif re.match(r"Q\d*", person_id):
-            query_parameter = "identifier_wikidata"
-        else:
-            query_parameter = None
-    
-    return query_parameter
-
-def get_person(criteria):
-    unique_facet_terms = get_facets(unique_terms=True)
-
-    query_param = lookup_parameter_person(criteria)
-
-    entity_doc = {
-        "criteria": criteria,
-        "query parameter": query_param,
-        "error": "No results found"
-    }
-
-    results = search_client.get_index('entities').search(
-        criteria, 
-        {'filters': f'{query_param} = "{criteria}"'}
-    )
-    if len(results["hits"]) == 1:
-        entity_doc = results["hits"][0]
-
-    if entity_doc is None or "error" in entity_doc:
-        entity_package = entity_doc
-    else:
-        entity_package = {
-            "entity": entity_doc
-        }
-        entity_package["entity"]["sources"] = [entity_doc["entity_source"]]
-
-        entity_package["person_unique_terms"] = dict()
-        for facet in unique_facet_terms.keys():
-            if facet in entity_doc and next((i for i in entity_doc[facet] if i in unique_facet_terms[facet]), None) is not None:
-                entity_package["person_unique_terms"][facet] = [i for i in entity_doc[facet] if i in unique_facet_terms[facet]]
-
-        filters = " OR ".join(
-            [
-                f'subject_identifier_{k} = "{v}"' for k, v
-                in entity_doc["identifiers"].items() if k in ["email","orcid"]
-            ]
-        )
-
-        r_claims = search_client.get_index('entity_claims').search(
-            "",
-            {
-                'limit': 1000,
-                'filters': f'{filters}'
-            }
-        )
-
-        if len(r_claims["hits"]) > 0:
-            entity_package["claims"] = r_claims["hits"]
-
-            authored_works = [i for i in r_claims["hits"] if i["property_label"] == "author of"]
-            if authored_works: 
-                entity_package["authored works"] = list()
-                for item in authored_works:
-                    work_package = {
-                        "title": item["object_label"]
-                    }
-                    if "object_identifiers" in item and item["object_identifiers"] is not None and "url" in item["object_identifiers"]:
-                        work_package["link"] = item["object_identifiers"]["url"]
-                    entity_package["authored works"].append(work_package)
-
-            claim_sources = list(set([i["claim_source"] for i in r_claims["hits"]]))
-            if claim_sources:
-                entity_package["entity"]["sources"].extend([i for i in claim_sources if i != entity_package["entity"]["entity_source"]])
-
-    return entity_package
 
 def requested_format(args, default="json"):
     if "format" not in args:
@@ -210,46 +138,6 @@ def requested_format(args, default="json"):
             abort(400)
         else:
             return args["format"]
-
-def get_facets(categories=facet_categories_people, unique_terms=False):
-    facet_results = search_client.get_index(people_index).search('', {
-        'limit': 0,
-        'facetsDistribution': categories,
-    })
-
-    if unique_terms:
-        unique_facet_values = dict()
-        for k, v in facet_results["facetsDistribution"].items():
-            unique_facet_values[k] = [facet for facet, count in v.items() if count == 1]
-        return unique_facet_values
-
-    return facet_results
-
-def search_people(q=str(), facet_filters=None, return_facets=facet_categories_people, response_type="person_docs"):
-    if response_type == "facet_frequency":
-        search_limit = 0
-    else:
-        search_limit = 10000
-
-    facet_filters_list = ["instance_of:Person"]
-
-    if facet_filters is not None:
-        facet_filters_list = facet_filters_list + facet_filters
-
-    search_results = search_client.get_index(people_index).search(q, {
-        "limit": search_limit,
-        "facetsDistribution": return_facets,
-        "facetFilters": facet_filters_list
-    })
-
-    if response_type == "facet_frequency":
-        search_response = dict()
-        for facet in return_facets:
-            search_response[facet] = {k:v for k,v in search_results["facetsDistribution"][facet].items() if v > 0}
-    else:
-        search_response = search_results
-
-    return search_response
 
 def faceted_search(q=str(), facet_filters=None, return_facets=entity_search_facets, limit=20, offset=0):
     search_params = {
@@ -323,35 +211,6 @@ def claim_identifiers(unresolved=True, identifier_type="all"):
         id_listing = list(set(filtered_ids))
     
     return id_listing
-
-def get_pub(doi):
-    results = search_client.get_index(pubs_index).search(
-        doi,
-        {
-            'filters': f'identifier_doi = "{doi}"'
-        }
-    )
-    if len(results["hits"]) == 1:
-        return results["hits"][0]
-    elif len(results["hits"]) > 1:
-        return {
-            "doi": doi,
-            "error": "More than one result returned for a single DOI. Something's wrong in the database."
-        }
-    else:
-        return {
-            "doi": doi,
-            "error": "No results found in cache."
-        }
-
-def get_claims_info():
-    claims_facets = search_client.get_index('entity_claims').search(
-        "", 
-        {
-            "limit": 0, "facetsDistribution": ["*"]
-        }
-    )
-    return claims_facets["facetsDistribution"]
 
 def arg_stripper(args, leave_out, output_format="url_params"):
     stripped_args = {k:v for k,v in args.items() if k not in leave_out}
