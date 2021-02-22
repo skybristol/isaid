@@ -156,61 +156,66 @@ def faceted_search(q=str(), facet_filters=None, return_facets=entity_search_face
 
     return search_results
 
-def entity_identifiers():
-    identifiers = list()
-    entities = search_client.get_index('entities').get_documents(
+def entity_identifiers(identifier_type="all"):
+    entity_facets = search_client.get_index('entities').get_attributes_for_faceting()
+    identifier_facets = [i for i in entity_facets if "identifier_" in i]
+
+    if identifier_type == "all":
+        facets_distribution = identifier_facets
+    else:
+        facets_distribution = [i for i in identifier_facets if i.split("_")[-1] == identifier_type]
+
+    if len(facets_distribution) == 0:
+        return
+
+    results = search_client.get_index('entities').search(
+        '',
         {
-            "limit": 500000,
-            "attributesToRetrieve": "identifier_orcid,identifier_email,identifier_sbid,identifier_doi,identifier_fbms_code,identifier_url"
+            "limit": 0,
+            "facetsDistribution": facets_distribution
         }
     )
-    for entity in entities:
-        identifiers.extend([v for k,v in entity.items()])
-    
+
+    identifiers = dict()
+    for k, v in results["facetsDistribution"].items():
+        identifiers[k] = list(v.keys())
+
     return identifiers
 
-def claim_identifiers(unresolved=True, identifier_type="all"):
-    id_facet_results = search_client.get_index('entity_claims').search(
+def claim_identifiers(identifier_type="all", unresolved=True):
+    claim_facets = search_client.get_index('claims').get_attributes_for_faceting()
+    identifier_facets = [i for i in claim_facets if "_identifier_" in i]
+
+    if identifier_type == "all":
+        facets_distribution = identifier_facets
+    else:
+        facets_distribution = [i for i in identifier_facets if i.split("_")[-1] == identifier_type]
+
+    if len(facets_distribution) == 0:
+        return
+
+    results = search_client.get_index('claims').search(
         "", 
         {
             "limit": 0, 
-            "facetsDistribution": [
-                "subject_identifier_orcid",
-                "subject_identifier_email",
-                "subject_identifier_sbid",
-                "object_identifier_doi",
-                "object_identifier_fbms_code",
-                "object_identifier_url"
-            ]
+            "facetsDistribution": facets_distribution
         }
     )
     
     if unresolved:
         entity_ids = entity_identifiers()
+        all_resolved_ids = list()
+        for identifiers in entity_ids.values():
+            all_resolved_ids.extend(identifiers)
     
-    id_listing = dict()
-
-    for id_type,identifiers in id_facet_results["facetsDistribution"].items():
-        id_position = id_type.split("_")[0]
-        id_name = id_type.split("_")[-1]
-        id_list = list(identifiers.keys())
-
-        if id_position not in id_listing:
-            id_listing[id_position] = dict()
+    identifiers = dict()
+    for k, v in results["facetsDistribution"].items():
         if unresolved:
-            id_listing[id_position][id_name] = [i for i in id_list if i not in entity_ids]
+            identifiers[k] = [i for i in list(v.keys()) if i not in all_resolved_ids]
         else:
-            id_listing[id_position][id_name] = id_list
+            identifiers[k] = list(v.keys())
             
-    if identifier_type != "all":
-        filtered_ids = list()
-        for id_position, id_types in id_listing.items():
-            for id_type, ids in id_types.items():
-                if id_type == identifier_type:
-                    filtered_ids.extend(ids)
-        id_listing = list(set(filtered_ids))
-    
-    return id_listing
+    return identifiers
 
 def arg_stripper(args, leave_out, output_format="url_params"):
     stripped_args = {k:v for k,v in args.items() if k not in leave_out}

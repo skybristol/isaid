@@ -204,18 +204,27 @@ def lookup_entity():
                     })
         return render_template("entity.html", data=entity, claims=claims_content, cached_source_links=cached_source_links)
 
-@app.route("/identifiers/<id_type>", methods=["GET"])
-def query_identifiers(id_type):
-    if id_type == "unresolved_dois":
-        return jsonify(claim_identifiers(identifier_type="doi"))
-    elif id_type == "unresolved_emails":
-        return jsonify(claim_identifiers(identifier_type="email"))
-    elif id_type == "unresolved_orcids":
-        return jsonify(claim_identifiers(identifier_type="orcid"))
-    elif id_type == "unresolved_fbms_code":
-        return jsonify(claim_identifiers(identifier_type="fbms_code"))
-    elif id_type == "all":
-        return jsonify(claim_identifiers())
+@app.route("/identifiers/<identifier_source>/<id_type>", methods=["GET"])
+def query_identifiers(identifier_source, id_type):
+    if identifier_source not in ["claims","entities"]:
+        abort(404)
+
+    if id_type not in ["all","email","orcid","doi"]:
+        abort(404)
+    
+    if identifier_source == "entities":
+        identifiers = entity_identifiers(identifier_type=id_type)
+    else:
+        if "unresolved" in request.args:
+            unresolved = request.args["unresolved"]
+        else:
+            unresolved = False
+        identifiers = claim_identifiers(identifier_type=id_type, unresolved=unresolved)
+
+    if identifiers is None:
+        abort(500)
+
+    return jsonify(identifiers)
 
 @app.route("/reference/<ref_type>/<ref_source>/<ref_id>", methods=["GET"])
 def reference_data(ref_type, ref_source, ref_id):
