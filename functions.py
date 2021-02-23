@@ -127,7 +127,67 @@ claims_sources = {
         "entity_id": "usgs_web_url",
         "example_value": "https://usgs.gov/staff-profiles/layne-adams",
         "description": "The USGS Staff Profiles system provides individual pages for USGS staff members sharing details about their work. Individual profile pages are scraped for expertise terms, links to additional works, and other details."
-    }
+    },
+    "usgs_web_science_centers": {
+        "reference": "https://www.usgs.gov/usgs-science-centers",
+        "title": "USGS Science Center Listing",
+        "source_title": "USGS Science Center Web Page",
+        "index": "cache_usgs_science_centers",
+        "id_prop": "url",
+        "entity_id": "org_id",
+        "example_value": "https://www.usgs.gov/centers/asc",
+        "description": "The USGS is organized into Science Centers located across the landscape. This cache is from a web scrape of the USGS Science Center listing on the USGS web."
+    },
+    "usgs_web_science_center_locations": {
+        "reference": "https://www.usgs.gov/usgs-science-centers",
+        "title": "USGS Science Center Locations",
+        "source_title": "USGS Science Center Location",
+        "index": "cache_usgs_web_locations",
+        "id_prop": "location_name",
+        "entity_id": "org_id",
+        "example_value": "Juneau Biology Office",
+        "description": "This cache comes from the USGS Web listing of facility locations part of a given Science Center. It is used to help show or provide search for where USGS is located on the landscape."
+    },
+    "usgs_web_science_center_subjects": {
+        "reference": "https://www.usgs.gov/usgs-science-centers",
+        "title": "USGS Science Center Subjects Addressed",
+        "source_title": "USGS Science Center Subject",
+        "index": "cache_usgs_web_sc_subjects",
+        "id_prop": "subject_link",
+        "entity_id": "org_id",
+        "example_value": "https://www.usgs.gov/centers/asc/science-topics/birds",
+        "description": "This cache comes from the USGS Web site listing of science themes and topics addressed by USGS Science Centers. It is used to help characterize the types of research subjects addressed by USGS"
+    },
+    "usgs_web_employees": {
+        "reference": "https://www.usgs.gov/usgs-science-centers",
+        "title": "USGS Science Center Employee Directory",
+        "source_title": "USGS Science Center Employee Listing",
+        "index": "cache_usgs_web_employees",
+        "id_prop": "email",
+        "entity_id": "email",
+        "example_value": "czimmerman@usgs.gov",
+        "description": "This cache contains basic listing of employees as provided by USGS Science Center employee directories. It is used as an additional method of filling in the blanks on who works where in the USGS."
+    },
+    "sciencebase_people": {
+        "reference": "https://www.sciencebase.gov/directory/people",
+        "title": "ScienceBase Directory People",
+        "source_title": "ScienceBase Person",
+        "index": "cache_sb_people",
+        "id_prop": "email",
+        "entity_id": "email",
+        "example_value": "sbristol@usgs.gov",
+        "description": "The ScienceBase Directory provides a conduit to select information from an internal USGS personnel directory along with some records of other people of interest. It is cached to provide an additional source of disambiguating information for people and some properties used in claims."
+    },
+    "sciencebase_organizations": {
+        "reference": "https://www.sciencebase.gov/directory/organizations",
+        "title": "ScienceBase Directory Organizations",
+        "source_title": "ScienceBase Organization",
+        "index": "cache_sb_orgs",
+        "id_prop": "id",
+        "entity_id": "org_id",
+        "example_value": "64239",
+        "description": "The ScienceBase Directory provides a conduit to select information on organizational entities that may be of interest in some of our work. It uses only an internal identifier scheme at this point."
+    },
 }
 
 def requested_format(args, default="json"):
