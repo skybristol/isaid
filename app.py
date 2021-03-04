@@ -259,6 +259,12 @@ def cached_source_data(source):
 
     return jsonify(cached_record)
 
+@app.route("/source_data/<source>", methods=["GET"])
+def source_data(source):
+    source_data = get_source_data(source)
+
+    return jsonify(source_data)
+
 @app.route("/entity_claims")
 def entity_claims():
     if "id" not in request.args:
