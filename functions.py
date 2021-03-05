@@ -32,6 +32,7 @@ facet_categories_people = search_client.get_index(people_index).get_attributes_f
 entity_search_facets = [
         "category",
         "job title",
+        "usgs_organizational_units",
         "educational affiliation",
         "professional affiliation",
         "employed by",
@@ -472,7 +473,7 @@ def get_entity(identifier):
             "claims": claims["hits"]
         }
 
-def get_source_data(source):
+def get_source_data(source, limit=1000, offset=0):
     if source == "usgs_profiles":
         profile_inventory = search_client.get_index('cache_usgs_profile_inventory').get_documents({'limit': 10000})
         staff_profiles = search_client.get_index('cache_usgs_profiles').get_documents({'limit': 10000})
@@ -510,6 +511,13 @@ def get_source_data(source):
         duplicate_orcids = [item for item, count in collections.Counter([i["orcid"] for i in unique_identified_profiles if i["orcid"] is not None]).items() if count > 1]
         for profile in [i for i in unique_identified_profiles if i["orcid"] in duplicate_orcids]:
             profile.update({"orcid": None})
+
+        for profile in [p for p in unique_identified_profiles if p["profile_image_url"] is not None and "placeholder-profile" in p["profile_image_url"]]:
+            profile.update({"profile_image_url": None})
+
+        for profile in [p for p in unique_identified_profiles if p["body_content_links"] is not None]:
+            for link in profile["body_content_links"]:
+                link.update({"doi": doi_in_string(link["link_href"])})
 
         return unique_identified_profiles
 
@@ -593,7 +601,7 @@ def get_source_data(source):
         return sipp_center_records
 
     elif source == "sb_people":
-        sb_people = search_client.get_index('cache_sb_people').get_documents({'limit': 20000})
+        sb_people = search_client.get_index('cache_sb_people').get_documents({'limit': limit, 'offset': offset})
         sb_orgs = search_client.get_index('cache_sb_orgs').get_documents({'limit': 10000})
 
         summarized_people = list()
@@ -659,6 +667,86 @@ def get_source_data(source):
             summarized_people.append(summarized_person)
 
         return summarized_people
+    
+    elif source == "orcid":
+        new_field_mapping = {
+            "creator": "CreativeWorks",
+            "funder": "Funders"
+        }
+
+        orcid_records = search_client.get_index('cache_orcid').get_documents({'limit': limit, 'offset': offset})
+
+        for record in orcid_records:
+            if "name" in record:
+                record.update({"_display_name": record["name"]})
+            else:
+                if "givenName" in record and "familyName" in record:
+                    record.update({"_display_name": f'{record["givenName"]} {record["familyName"]}'})
+                else:
+                    record.update({"_display_name": None})
+
+            record.update({
+                "CreativeWorks": None,
+                "Funders": None,
+            })
+            
+            if "@reverse" in record:
+                for k,v in record["@reverse"].items():
+                    if isinstance(v, dict):
+                        record.update({k: [v]})
+                    elif isinstance(v, list):
+                        record.update({k: v})
+                    record[new_field_mapping[k]] = list()
+                    for item in [i for i in record[k] if "name" in i and i["name"] is not None]:
+                        if "identifier" in item:
+                            item["identifiers"] = list()
+                            if isinstance(item["identifier"], dict):
+                                item.update({"identifier": [item["identifier"]]})
+                            for ident in item["identifier"]:
+                                s_ident = f'{ident["propertyID"]}:{ident["value"]}'
+                                item["identifiers"].append(s_ident)
+                            del item["identifier"]
+                        record[new_field_mapping[k]].append(item)
+                del record["@reverse"]
+
+            if "alumniOf" in record:
+                if isinstance(record["alumniOf"], dict):
+                    record.update({"alumniOf": [record["alumniOf"]]})
+                for item in record["alumniOf"]:
+                    if "identifier" in item:
+                        item["identifiers"] = list()
+                        if isinstance(item["identifier"], dict):
+                            item.update({"identifier": [item["identifier"]]})
+                        for ident in item["identifier"]:
+                            s_ident = f'{ident["propertyID"]}:{ident["value"]}'
+                            item["identifiers"].append(s_ident)
+                        del item["identifier"]
+            else:
+                record.update({"alumniOf": None})
+
+            if "affiliation" in record:
+                if isinstance(record["affiliation"], dict):
+                    record.update({"affiliation": [record["affiliation"]]})
+                for item in record["affiliation"]:
+                    if "identifier" in item:
+                        item["identifiers"] = list()
+                        if isinstance(item["identifier"], dict):
+                            item.update({"identifier": [item["identifier"]]})
+                        for ident in item["identifier"]:
+                            s_ident = f'{ident["propertyID"]}:{ident["value"]}'
+                            item["identifiers"].append(s_ident)
+                        del item["identifier"]
+            else:
+                record.update({"affiliation": None})
+
+            if "alternateName" in record:
+                if isinstance(record["alternateName"], str):
+                    record.update({"alternateName": [record["alternateName"]]})
+            else:
+                record.update({"alternateName": None})
+
+        return orcid_records
+
 
 def sb_location(sb_doc):
     if "primaryLocation" not in sb_doc:
@@ -688,3 +776,10 @@ def sb_location(sb_doc):
     location_record["zip"] = sb_doc["primaryLocation"]["streetAddress"]["zip"]
     
     return location_record
+
+def doi_in_string(string):
+    search = re.search(r"10.\d{4,9}\/[\S]+$", string)
+    if search is None:
+        return
+
+    return search.group()

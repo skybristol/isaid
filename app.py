@@ -261,7 +261,15 @@ def cached_source_data(source):
 
 @app.route("/source_data/<source>", methods=["GET"])
 def source_data(source):
-    source_data = get_source_data(source)
+    limit = 1000
+    offset = 0
+    if "limit" in request.args:
+        limit = request.args["limit"]
+
+    if "offset" in request.args:
+        offset = request.args["offset"]
+
+    source_data = get_source_data(source, limit=limit, offset=offset)
 
     return jsonify(source_data)
 
