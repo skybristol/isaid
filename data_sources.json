@@ -92,10 +92,10 @@
             "MissionArea": {
                 "CSS": "Core Science Systems Mission Area", 
                 "REG": "Region", 
-                "EM": "Ecosystems Mission Area", 
+                "EM": "Energy and Minerals Mission Area", 
                 "ADMIN": "Administration", 
                 "DO": "Directors Office", 
-                "EMA": "Energy and Minerals Mission Area", 
+                "EMA": "Ecosystems Mission Area", 
                 "WMA": "Water Mission Area",
                 "NH": "Natural Hazards Mission Area"
             }
