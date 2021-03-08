@@ -488,7 +488,7 @@ def get_source_data(source, limit=1000, offset=0):
         return data_sources
 
     if source == "usgs_profiles":
-        recordset = package_source_usgs_profiles()
+        recordset = package_source_usgs_profiles(limit, offset)
 
         return source_a_recordset(recordset, source_meta)
 
@@ -554,9 +554,9 @@ def doi_in_string(string):
 
     return search.group()
 
-def package_source_usgs_profiles():
-    profile_inventory = search_client.get_index('cache_usgs_profile_inventory').get_documents({'limit': 10000})
-    staff_profiles = search_client.get_index('cache_usgs_profiles').get_documents({'limit': 10000})
+def package_source_usgs_profiles(limit, offset):
+    profile_inventory = search_client.get_index('cache_usgs_profile_inventory').search('', {'limit': 10000, 'attributesToRetrieve': ['profile','title']})['hits']
+    staff_profiles = search_client.get_index('cache_usgs_profiles').get_documents({'limit': limit, 'offset': offset})
 
     identified_profiles = [i for i in staff_profiles if i["email"] is not None or i["orcid"] is not None]
     identified_profiles.sort(key=lambda x:x['email'])
