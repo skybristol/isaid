@@ -13,7 +13,7 @@ import requests
 from datetime import datetime
 from itertools import groupby
 import collections
-
+import json
 
 people_index = 'entities'
 pubs_index = 'entities'
@@ -473,279 +473,49 @@ def get_entity(identifier):
             "claims": claims["hits"]
         }
 
+def source_a_recordset(recordset, source_meta):
+    infusion_meta = {f"_source_{k}":v for k,v in source_meta.items() if k in ["source_id","name","reference"]}
+
+    for record in recordset:
+        record.update(infusion_meta)
+
+    return recordset
+
 def get_source_data(source, limit=1000, offset=0):
+    data_sources = json.load(open('data_sources.json', 'r'))
+    source_meta = next((i for i in data_sources if i["source_id"] == source), None)
+    if source_meta is None:
+        return data_sources
+
     if source == "usgs_profiles":
-        profile_inventory = search_client.get_index('cache_usgs_profile_inventory').get_documents({'limit': 10000})
-        staff_profiles = search_client.get_index('cache_usgs_profiles').get_documents({'limit': 10000})
+        recordset = package_source_usgs_profiles()
 
-        identified_profiles = [i for i in staff_profiles if i["email"] is not None or i["orcid"] is not None]
-        identified_profiles.sort(key=lambda x:x['email'])
-        most_likely_profile = dict()
-        for k,v in groupby(identified_profiles,key=lambda x:x['email']):
-            profiles = list([(i["profile"],i["content_size"]) for i in v])
-            if len(profiles) > 1:
-                most_likely_profile[k] = sorted(profiles,key=lambda x:(-x[1],x[0]))[0][0]
-
-        for person in identified_profiles:
-            inventory_person = next((i for i in profile_inventory if i["profile"] == person["profile"]), None)
-            person.update({"title": inventory_person["title"]})
-
-        ignore_emails = [
-            None,
-            "ask@usgs.gov",
-            'usgs_yes@usgs.gov',
-            'astro_outreach@usgs.gov',
-            'gs-w-txpublicinfo@usgs.gov',
-            'library@usgs.gov'
-        ]
-        unique_emails = list(set([i["email"] for i in staff_profiles if i["email"] not in ignore_emails]))
-        unique_emails.sort()
-
-        unique_identified_profiles = list()
-        for email in unique_emails:
-            if email in most_likely_profile.keys():
-                unique_identified_profiles.append(next(i for i in identified_profiles if i["profile"] == most_likely_profile[email]))
-            else:
-                unique_identified_profiles.append(next(i for i in staff_profiles if i["email"] == email))
-
-        duplicate_orcids = [item for item, count in collections.Counter([i["orcid"] for i in unique_identified_profiles if i["orcid"] is not None]).items() if count > 1]
-        for profile in [i for i in unique_identified_profiles if i["orcid"] in duplicate_orcids]:
-            profile.update({"orcid": None})
-
-        for profile in [p for p in unique_identified_profiles if p["profile_image_url"] is not None and "placeholder-profile" in p["profile_image_url"]]:
-            profile.update({"profile_image_url": None})
-
-        for profile in [p for p in unique_identified_profiles if p["body_content_links"] is not None]:
-            for link in profile["body_content_links"]:
-                link.update({"doi": doi_in_string(link["link_href"])})
-
-        return unique_identified_profiles
+        return source_a_recordset(recordset, source_meta)
 
     elif source == "mission_areas":
-        return [
-            {
-                "sipp_code": "CSS",
-                "name": "Core Science Systems Mission Area",
-                "url": "https://www.usgs.gov/mission-areas/core-science-systems",
-                "associate_director_name": "Kevin T Gallagher",
-                "associate_director_email": "kgallagher@usgs.gov"
-            },
-            {
-                "sipp_code": "EM",
-                "name": "Ecosystems Mission Area",
-                "url": "https://www.usgs.gov/mission-areas/ecosystems",
-                "associate_director_name": "Anne Kinsinger",
-                "associate_director_email": "akinsinger@usgs.gov"
-            },
-            {
-                "sipp_code": "EMA",
-                "name": "Energy and Minerals Mission Area",
-                "url": "https://www.usgs.gov/mission-areas/energy-and-minerals",
-                "associate_director_name": "Sarah Ryker, Ph.D.",
-                "associate_director_email": "sryker@usgs.gov"
-            },
-            {
-                "sipp_code": "WMA",
-                "name": "Water Resources Mission Area",
-                "url": "https://www.usgs.gov/mission-areas/water-resources",
-                "associate_director_name": "Don Cline, Ph.D.",
-                "associate_director_email": "dcline@usgs.gov"
-            },
-            {
-                "sipp_code": "NH",
-                "name": "Natural Hazards Mission Area",
-                "url": "https://www.usgs.gov/mission-areas/natural-hazards",
-                "associate_director_name": "Dave Applegate, Ph.D.",
-                "associate_director_email": "applegate@usgs.gov"
-            },
-        ]
+        recordset = source_meta["data_source"]
+
+        return source_a_recordset(recordset, source_meta)
     
     elif source == "sipp_centers":
-        sipp_labels = {
-            "RegionCode": {
-                'HQ': 'Headquarters', 
-                'SW': 'Southwest Region', 
-                'NE': 'Northeast Region',
-                'AK': 'Alaska Region',
-                'MC': 'Midcontinent Region', 
-                'RM': 'Rocky Mountain Region', 
-                'SE': 'Southeast Region', 
-                'NWPI': "Northwest/Pacific Islands Region"
-            },
-            "MissionArea": {
-                'CSS': 'Core Science Systems Mission Area', 
-                'REG': 'Region', 
-                'EM': 'Ecosystems Mission Area', 
-                'ADMIN': 'Administration', 
-                'DO': 'Directors Office', 
-                'EMA': 'Energy and Minerals Mission Area', 
-                'WMA': 'Water Mission Area', 
-                'NH': 'Natural Hazards Mission Area'
-            }
-        }
+        recordset = package_source_sipp_centers(source_meta["lookup_values"])
 
-        sipp_center_records = search_client.get_index('cache_sipp_usgs_centers').get_documents({'limit': 500})
-
-        for center in sipp_center_records:
-            update = {
-                "MissionAreaName": None,
-                "Region": None
-            }
-            if center["MissionArea"] not in ["REG","ADMIN","DO"]:
-                update["MissionAreaName"] = sipp_labels["MissionArea"][center["MissionArea"]]
-
-            if center["RegionCode"] != "HQ":
-                update["Region"] = sipp_labels["RegionCode"][center["RegionCode"]]
-            center.update(update)
-
-        return sipp_center_records
+        return source_a_recordset(recordset, source_meta)
 
     elif source == "sb_people":
-        sb_people = search_client.get_index('cache_sb_people').get_documents({'limit': limit, 'offset': offset})
-        sb_orgs = search_client.get_index('cache_sb_orgs').get_documents({'limit': 10000})
+        recordset = package_source_sciencebase_directory_people(limit, offset)
 
-        summarized_people = list()
-        for person in [p for p in sb_people if p["email"] is not None]:
-            summarized_person = {
-                "uri": person["link"]["href"],
-                "_date_cached": person["_date_cached"],
-                "firstName": None,
-                "middleName": None,
-                "lastName": person["lastName"],
-                "displayName": person["displayName"],
-                "email": person["email"],
-                "jobTitle": None,
-                "organization": None,
-                "fbms_code": None,
-                "active": person["active"],
-                "supervisor_name": None,
-                "supervisor_email": None,
-                "url": person["url"],
-                "orcId": None
-            }
-            if "orcId" in person:
-                summarized_person["orcId"] = person["orcId"]
-
-            if "firstName" in person:
-                summarized_person["firstName"] = person["firstName"]
-
-            if "middleName" in person:
-                summarized_person["middleName"] = person["middleName"]
-
-            if "jobTitle" in person:
-                summarized_person["jobTitle"] = person["jobTitle"]
-
-            if "organization" in person:
-                summarized_person["organization"] = {
-                    "name": person["organization"]["displayText"],
-                    "uri": None,
-                    "url": None,
-                    "location": None,
-                    "fbms_code": None,
-                    "sipp_CenterCode": None
-                }
-                org_doc = next((i for i in sb_orgs if i["id"] == person["organization"]["id"]), None)
-                if org_doc is not None:
-                    summarized_person["organization"]["url"] = org_doc["url"]
-                    summarized_person["organization"]["uri"] = org_doc["link"]["href"]
-                    summarized_person["organization"]["location"] = sb_location(org_doc)
-                    if "extensions" in org_doc and "usgsOrganizationExtension" in org_doc["extensions"]:
-                        summarized_person["organization"]["fbms_code"] = org_doc["extensions"]["usgsOrganizationExtension"]["fbmsCode"]
-                        summarized_person["organization"]["sipp_CenterCode"] = org_doc["extensions"]["usgsOrganizationExtension"]["centerCode"]
-
-            if person["extensions"]["usgsPersonExtension"]["orgCode"] is not None:
-                summarized_person["fbms_code"] = person["extensions"]["usgsPersonExtension"]["orgCode"]
-
-            if person["extensions"]["personExtension"]["supervisorId"] is not None:
-                supervisor_doc = next((i for i in sb_people if i["id"] == person["extensions"]["personExtension"]["supervisorId"]), None)
-                if supervisor_doc is not None:
-                    summarized_person["supervisor_email"] = supervisor_doc["email"]
-                    summarized_person["supervisor_name"] = supervisor_doc["displayName"]
-
-            summarized_person["location"] = sb_location(person)
-
-            summarized_people.append(summarized_person)
-
-        return summarized_people
+        return source_a_recordset(recordset, source_meta)
     
     elif source == "orcid":
-        new_field_mapping = {
-            "creator": "CreativeWorks",
-            "funder": "Funders"
-        }
+        recordset = package_source_orcid_records(limit, offset)
 
-        orcid_records = search_client.get_index('cache_orcid').get_documents({'limit': limit, 'offset': offset})
+        return source_a_recordset(recordset, source_meta)
 
-        for record in orcid_records:
-            if "name" in record:
-                record.update({"_display_name": record["name"]})
-            else:
-                if "givenName" in record and "familyName" in record:
-                    record.update({"_display_name": f'{record["givenName"]} {record["familyName"]}'})
-                else:
-                    record.update({"_display_name": None})
+    elif source == "doi":
+        recordset = package_source_doi_records(source_meta, limit, offset)
 
-            record.update({
-                "CreativeWorks": None,
-                "Funders": None,
-            })
-            
-            if "@reverse" in record:
-                for k,v in record["@reverse"].items():
-                    if isinstance(v, dict):
-                        record.update({k: [v]})
-                    elif isinstance(v, list):
-                        record.update({k: v})
-                    record[new_field_mapping[k]] = list()
-                    for item in [i for i in record[k] if "name" in i and i["name"] is not None]:
-                        if "identifier" in item:
-                            item["identifiers"] = list()
-                            if isinstance(item["identifier"], dict):
-                                item.update({"identifier": [item["identifier"]]})
-                            for ident in item["identifier"]:
-                                s_ident = f'{ident["propertyID"]}:{ident["value"]}'
-                                item["identifiers"].append(s_ident)
-                            del item["identifier"]
-                        record[new_field_mapping[k]].append(item)
-                del record["@reverse"]
-
-            if "alumniOf" in record:
-                if isinstance(record["alumniOf"], dict):
-                    record.update({"alumniOf": [record["alumniOf"]]})
-                for item in record["alumniOf"]:
-                    if "identifier" in item:
-                        item["identifiers"] = list()
-                        if isinstance(item["identifier"], dict):
-                            item.update({"identifier": [item["identifier"]]})
-                        for ident in item["identifier"]:
-                            s_ident = f'{ident["propertyID"]}:{ident["value"]}'
-                            item["identifiers"].append(s_ident)
-                        del item["identifier"]
-            else:
-                record.update({"alumniOf": None})
-
-            if "affiliation" in record:
-                if isinstance(record["affiliation"], dict):
-                    record.update({"affiliation": [record["affiliation"]]})
-                for item in record["affiliation"]:
-                    if "identifier" in item:
-                        item["identifiers"] = list()
-                        if isinstance(item["identifier"], dict):
-                            item.update({"identifier": [item["identifier"]]})
-                        for ident in item["identifier"]:
-                            s_ident = f'{ident["propertyID"]}:{ident["value"]}'
-                            item["identifiers"].append(s_ident)
-                        del item["identifier"]
-            else:
-                record.update({"affiliation": None})
-
-            if "alternateName" in record:
-                if isinstance(record["alternateName"], str):
-                    record.update({"alternateName": [record["alternateName"]]})
-            else:
-                record.update({"alternateName": None})
-
-        return orcid_records
+        return source_a_recordset(recordset, source_meta)
 
 
 def sb_location(sb_doc):
@@ -783,3 +553,228 @@ def doi_in_string(string):
         return
 
     return search.group()
+
+def package_source_usgs_profiles():
+    profile_inventory = search_client.get_index('cache_usgs_profile_inventory').get_documents({'limit': 10000})
+    staff_profiles = search_client.get_index('cache_usgs_profiles').get_documents({'limit': 10000})
+
+    identified_profiles = [i for i in staff_profiles if i["email"] is not None or i["orcid"] is not None]
+    identified_profiles.sort(key=lambda x:x['email'])
+    most_likely_profile = dict()
+    for k,v in groupby(identified_profiles,key=lambda x:x['email']):
+        profiles = list([(i["profile"],i["content_size"]) for i in v])
+        if len(profiles) > 1:
+            most_likely_profile[k] = sorted(profiles,key=lambda x:(-x[1],x[0]))[0][0]
+
+    for person in identified_profiles:
+        inventory_person = next((i for i in profile_inventory if i["profile"] == person["profile"]), None)
+        person.update({"title": inventory_person["title"]})
+
+    ignore_emails = [
+        None,
+        "ask@usgs.gov",
+        'usgs_yes@usgs.gov',
+        'astro_outreach@usgs.gov',
+        'gs-w-txpublicinfo@usgs.gov',
+        'library@usgs.gov'
+    ]
+    unique_emails = list(set([i["email"] for i in staff_profiles if i["email"] not in ignore_emails]))
+    unique_emails.sort()
+
+    unique_identified_profiles = list()
+    for email in unique_emails:
+        if email in most_likely_profile.keys():
+            unique_identified_profiles.append(next(i for i in identified_profiles if i["profile"] == most_likely_profile[email]))
+        else:
+            unique_identified_profiles.append(next(i for i in staff_profiles if i["email"] == email))
+
+    duplicate_orcids = [item for item, count in collections.Counter([i["orcid"] for i in unique_identified_profiles if i["orcid"] is not None]).items() if count > 1]
+    for profile in [i for i in unique_identified_profiles if i["orcid"] in duplicate_orcids]:
+        profile.update({"orcid": None})
+
+    for profile in [p for p in unique_identified_profiles if p["profile_image_url"] is not None and "placeholder-profile" in p["profile_image_url"]]:
+        profile.update({"profile_image_url": None})
+
+    for profile in [p for p in unique_identified_profiles if p["body_content_links"] is not None]:
+        for link in profile["body_content_links"]:
+            link.update({"doi": doi_in_string(link["link_href"])})
+
+    return unique_identified_profiles
+
+def package_source_sipp_centers(sipp_labels):
+        sipp_center_records = search_client.get_index('cache_sipp_usgs_centers').get_documents({'limit': 500})
+
+        for center in sipp_center_records:
+            update = {
+                "MissionAreaName": None,
+                "Region": None
+            }
+            if center["MissionArea"] not in ["REG","ADMIN","DO"]:
+                update["MissionAreaName"] = sipp_labels["MissionArea"][center["MissionArea"]]
+
+            if center["RegionCode"] != "HQ":
+                update["Region"] = sipp_labels["RegionCode"][center["RegionCode"]]
+            center.update(update)
+
+        return sipp_center_records
+
+def package_source_sciencebase_directory_people(limit, offset):
+    sb_people = search_client.get_index('cache_sb_people').get_documents({'limit': limit, 'offset': offset})
+    sb_orgs = search_client.get_index('cache_sb_orgs').get_documents({'limit': 10000})
+
+    summarized_people = list()
+    for person in [p for p in sb_people if p["email"] is not None]:
+        summarized_person = {
+            "uri": person["link"]["href"],
+            "_date_cached": person["_date_cached"],
+            "firstName": None,
+            "middleName": None,
+            "lastName": person["lastName"],
+            "displayName": person["displayName"],
+            "email": person["email"],
+            "jobTitle": None,
+            "organization": None,
+            "fbms_code": None,
+            "active": person["active"],
+            "supervisor_name": None,
+            "supervisor_email": None,
+            "url": person["url"],
+            "orcId": None
+        }
+        if "orcId" in person:
+            summarized_person["orcId"] = person["orcId"]
+
+        if "firstName" in person:
+            summarized_person["firstName"] = person["firstName"]
+
+        if "middleName" in person:
+            summarized_person["middleName"] = person["middleName"]
+
+        if "jobTitle" in person:
+            summarized_person["jobTitle"] = person["jobTitle"]
+
+        if "organization" in person:
+            summarized_person["organization"] = {
+                "name": person["organization"]["displayText"],
+                "uri": None,
+                "url": None,
+                "location": None,
+                "fbms_code": None,
+                "sipp_CenterCode": None
+            }
+            org_doc = next((i for i in sb_orgs if i["id"] == person["organization"]["id"]), None)
+            if org_doc is not None:
+                summarized_person["organization"]["url"] = org_doc["url"]
+                summarized_person["organization"]["uri"] = org_doc["link"]["href"]
+                summarized_person["organization"]["location"] = sb_location(org_doc)
+                if "extensions" in org_doc and "usgsOrganizationExtension" in org_doc["extensions"]:
+                    summarized_person["organization"]["fbms_code"] = org_doc["extensions"]["usgsOrganizationExtension"]["fbmsCode"]
+                    summarized_person["organization"]["sipp_CenterCode"] = org_doc["extensions"]["usgsOrganizationExtension"]["centerCode"]
+
+        if person["extensions"]["usgsPersonExtension"]["orgCode"] is not None:
+            summarized_person["fbms_code"] = person["extensions"]["usgsPersonExtension"]["orgCode"]
+
+        if person["extensions"]["personExtension"]["supervisorId"] is not None:
+            supervisor_doc = next((i for i in sb_people if i["id"] == person["extensions"]["personExtension"]["supervisorId"]), None)
+            if supervisor_doc is not None:
+                summarized_person["supervisor_email"] = supervisor_doc["email"]
+                summarized_person["supervisor_name"] = supervisor_doc["displayName"]
+
+        summarized_person["location"] = sb_location(person)
+
+        summarized_people.append(summarized_person)
+
+    return summarized_people
+
+def package_source_orcid_records(limit, offset):
+    new_field_mapping = {
+        "creator": "CreativeWorks",
+        "funder": "Funders"
+    }
+
+    orcid_records = search_client.get_index('cache_orcid').get_documents({'limit': limit, 'offset': offset})
+
+    for record in orcid_records:
+        if "name" in record:
+            record.update({"_display_name": record["name"]})
+        else:
+            if "givenName" in record and "familyName" in record:
+                record.update({"_display_name": f'{record["givenName"]} {record["familyName"]}'})
+            else:
+                record.update({"_display_name": None})
+
+        record.update({
+            "CreativeWorks": None,
+            "Funders": None,
+        })
+        
+        if "@reverse" in record:
+            for k,v in record["@reverse"].items():
+                if isinstance(v, dict):
+                    record.update({k: [v]})
+                elif isinstance(v, list):
+                    record.update({k: v})
+                record[new_field_mapping[k]] = list()
+                for item in [i for i in record[k] if "name" in i and i["name"] is not None]:
+                    if "identifier" in item:
+                        item["identifiers"] = list()
+                        if isinstance(item["identifier"], dict):
+                            item.update({"identifier": [item["identifier"]]})
+                        for ident in item["identifier"]:
+                            s_ident = f'{ident["propertyID"]}:{ident["value"]}'
+                            item["identifiers"].append(s_ident)
+                        del item["identifier"]
+                    record[new_field_mapping[k]].append(item)
+            del record["@reverse"]
+
+        if "alumniOf" in record:
+            if isinstance(record["alumniOf"], dict):
+                record.update({"alumniOf": [record["alumniOf"]]})
+            for item in record["alumniOf"]:
+                if "identifier" in item:
+                    item["identifiers"] = list()
+                    if isinstance(item["identifier"], dict):
+                        item.update({"identifier": [item["identifier"]]})
+                    for ident in item["identifier"]:
+                        s_ident = f'{ident["propertyID"]}:{ident["value"]}'
+                        item["identifiers"].append(s_ident)
+                    del item["identifier"]
+        else:
+            record.update({"alumniOf": None})
+
+        if "affiliation" in record:
+            if isinstance(record["affiliation"], dict):
+                record.update({"affiliation": [record["affiliation"]]})
+            for item in record["affiliation"]:
+                if "identifier" in item:
+                    item["identifiers"] = list()
+                    if isinstance(item["identifier"], dict):
+                        item.update({"identifier": [item["identifier"]]})
+                    for ident in item["identifier"]:
+                        s_ident = f'{ident["propertyID"]}:{ident["value"]}'
+                        item["identifiers"].append(s_ident)
+                    del item["identifier"]
+        else:
+            record.update({"affiliation": None})
+
+        if "alternateName" in record:
+            if isinstance(record["alternateName"], str):
+                record.update({"alternateName": [record["alternateName"]]})
+        else:
+            record.update({"alternateName": None})
+
+    return orcid_records
+
+def package_source_doi_records(source_meta, limit, offset):
+    doi_records = search_client.get_index('cache_doi').get_documents({'limit': limit, 'offset': offset})
+
+    doi_records = [i for i in doi_records if "title" in i and len(i["title"]) > 0]
+
+    for record in doi_records:
+        record.update({
+            "_issued_year": record["issued"]["date-parts"][0][0]
+        })
+        for key in [k for k,v in record.items() if k not in source_meta["evaluated_properties"]]:
+            del(record[key])
+
+    return doi_records

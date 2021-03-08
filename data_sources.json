@@ -1,0 +1,180 @@
+[
+    {
+        "source_id": "orcid",
+        "name": "ORCID Registry",
+        "reference": "https://orcid.org",
+        "title": "Open Researcher and Contributor ID",
+        "source_title": "ORCID",
+        "index": "cache_orcid",
+        "id_prop": "orcid",
+        "entity_id": "orcid",
+        "example_value": "0000-0003-1682-4031",
+        "code_reference": "https://github.com/skybristol/pylinkedcmd/blob/dev/pylinkedcmd/orcid.py",
+        "description": "The ORCID registry provides unique, persistent identifiers for authors and other contributors to publications and other assets. ORCID identifiers are used in the USGS for every person who authors something. The ORCID source provides information about authored works as well as organizational affiliations and other details. Each ORCID discovered as part of information gathering processes that is determined to identify a USGS employee is run through a process using content negotiation to retrieve descriptive metadata and linkages from the ORCID registry."
+    },
+    {
+        "source_id": "doi",
+        "name": "DOI Registry",
+        "reference": "https://doi.org",
+        "title": "Digital Object Identifier",
+        "source_title": "DOI",
+        "index": "cache_doi",
+        "id_prop": "DOI",
+        "entity_id": "doi",
+        "evaluated_properties": [
+            "title",
+            "type",
+            "publisher",
+            "issued",
+            "link",
+            "language",
+            "funder",
+            "container-title",
+            "container-title-short",
+            "author",
+            "URL",
+            "subject",
+            "reference_string",
+            "source"
+        ],
+        "example_value": "10.5334/dsj-2018-015",
+        "code_reference": "https://github.com/skybristol/pylinkedcmd/blob/dev/pylinkedcmd/doi.py",
+        "description": "The DOI registry provides unique, persistent identifiers for published articles/reports, datasets, models, and other assets. DOIs are used for USGS reports, articles, datasets, and other scientific assets of importance in assessing the state of science through time. USGS owns and operates the 10.3133 identifier space in CrossRef for its USGS Series publications and the 10.5066 identifier space in DataCite for data and other digital object registration. Each DOI discovered as part of information gathering processes that is determined to identify a USGS product or product contributed to by USGS personnel is run through a process using content negotiation to retrieve descriptive metadata from the DOI registry."
+    },
+    {
+        "source_id": "pubs_warehouse",
+        "name": "USGS Pubs Warehouse",
+        "reference": "https://pubs.usgs.gov",
+        "title": "USGS Publications Warehouse",
+        "source_title": "Pubs Warehouse",
+        "index": "cache_pw",
+        "id_prop": "indexId",
+        "entity_id": "usgs_pw_index_id",
+        "example_value": "ofr20161165",
+        "code_reference": "https://github.com/skybristol/pylinkedcmd/blob/dev/pylinkedcmd/pw.py",
+        "description": "The USGS Publications Warehouse provides a catalog of all USGS authored Series Reports and journal articles published over the course of the institution's history. The Pubs Warehouse is used as a source of DOIs to run through the DOI Registry process and additional metadata beyond what is included in the DOI Registry to use in further describing published works and their linkages to other information."
+    },
+    {
+        "source_id": "usgs_profiles",
+        "name": "USGS Staff Profiles",
+        "reference": "https://www.usgs.gov/connect/staff-profiles",
+        "title": "USGS Profile Pages",
+        "source_title": "USGS Profile Page",
+        "index": "cache_usgs_profiles",
+        "id_prop": "profile",
+        "entity_id": "usgs_web_url",
+        "example_value": "https://www.usgs.gov/staff-profiles/david-j-wald",
+        "code_reference": "https://github.com/skybristol/pylinkedcmd/blob/dev/pylinkedcmd/usgsweb.py",
+        "description": "The USGS Staff Profiles system provides individual pages for USGS staff members sharing details about their work. There is currently no API for this information, so individual profile pages are scraped for expertise terms, links to additional works, job titles, and contact information. This system is touched periodically to refresh available profile information."
+    },
+    {
+        "source_id": "sipp_centers",
+        "name": "USGS Cost Centers",
+        "reference": "https://www.usgs.gov/usgs-science-centers",
+        "title": "USGS Cost Center data from an internal source",
+        "source_title": "USGS Science Center Web Page",
+        "index": "cache_sipp_usgs_centers",
+        "id_prop": "CostCenterPrimary",
+        "entity_id": "org_id",
+        "example_value": "",
+        "description": "The USGS has a number of ways of identifying and describing major organizational units and their relationbships to one another. An internal source (called 'SIPP') is summarized and used in the process of building a usable information source to an identifier called the 'FBMS Code' that is referenced in other sources, names of Science Centers and other organizational units that are funded by USGS appropriations, and relationships to sub-organizations and higher level organizational constructs (USGS Regions and Mission Areas).",
+        "lookup_values": {
+            "RegionCode": {
+                "HQ": "Headquarters", 
+                "SW": "Southwest Region", 
+                "NE": "Northeast Region",
+                "AK": "Alaska Region",
+                "MC": "Midcontinent Region", 
+                "RM": "Rocky Mountain Region", 
+                "SE": "Southeast Region", 
+                "NWPI": "Northwest/Pacific Islands Region"
+            },
+            "MissionArea": {
+                "CSS": "Core Science Systems Mission Area", 
+                "REG": "Region", 
+                "EM": "Ecosystems Mission Area", 
+                "ADMIN": "Administration", 
+                "DO": "Directors Office", 
+                "EMA": "Energy and Minerals Mission Area", 
+                "WMA": "Water Mission Area",
+                "NH": "Natural Hazards Mission Area"
+            }
+        }
+    },
+    {
+        "source_id": "sb_people",
+        "name": "ScienceBase Directory People",
+        "reference": "https://www.sciencebase.gov/directory/people",
+        "title": "ScienceBase Directory People",
+        "source_title": "ScienceBase Directory",
+        "index": "cache_sb_people",
+        "id_prop": "email",
+        "entity_id": "email",
+        "example_value": "sbristol@usgs.gov",
+        "code_reference": "https://github.com/skybristol/pylinkedcmd/blob/dev/pylinkedcmd/sciencebase.py",
+        "description": "The ScienceBase Directory provides a conduit to select information from an internal USGS personnel directory along with some records of other people of interest. It is cached to provide an additional source of disambiguating information for people and some properties used in claims."
+    },
+    {
+        "source_id": "sb_orgs",
+        "name": "ScienceBase Directory Organizations",
+        "reference": "https://www.sciencebase.gov/directory/organizations",
+        "title": "ScienceBase Directory Organizations",
+        "source_title": "ScienceBase Directory",
+        "index": "cache_sb_orgs",
+        "id_prop": "id",
+        "entity_id": "org_id",
+        "example_value": "64239",
+        "code_reference": "https://github.com/skybristol/pylinkedcmd/blob/dev/pylinkedcmd/sciencebase.py",
+        "description": "The ScienceBase Directory provides a conduit to select information on organizational entities that may be of interest in some of our work. It uses only an internal identifier scheme at this point."
+    },
+    {
+        "source_id": "mission_areas",
+        "name": "USGS Mission Areas",
+        "reference": "https://www.usgs.gov/science/mission-areas",
+        "title": "ScienceBase Directory Organizations",
+        "source_title": "ScienceBase Directory",
+        "index": "NA",
+        "id_prop": "sipp_code",
+        "entity_id": "NA",
+        "example_value": "CSS",
+        "code_reference": "NA",
+        "description": "The USGS is organized into 5 science Mission Areas that execute its science mission. Each Mission Area is headed by an Associate Director, and each manages a set of Programs. The basic identifying information for Mission Areas is included as a relatively static information source with identifier values used as references in several other data sources.",
+        "data_source": [
+            {
+                "sipp_code": "CSS",
+                "name": "Core Science Systems Mission Area",
+                "url": "https://www.usgs.gov/mission-areas/core-science-systems",
+                "associate_director_name": "Kevin T Gallagher",
+                "associate_director_email": "kgallagher@usgs.gov"
+            },
+            {
+                "sipp_code": "EM",
+                "name": "Ecosystems Mission Area",
+                "url": "https://www.usgs.gov/mission-areas/ecosystems",
+                "associate_director_name": "Anne Kinsinger",
+                "associate_director_email": "akinsinger@usgs.gov"
+            },
+            {
+                "sipp_code": "EMA",
+                "name": "Energy and Minerals Mission Area",
+                "url": "https://www.usgs.gov/mission-areas/energy-and-minerals",
+                "associate_director_name": "Sarah Ryker, Ph.D.",
+                "associate_director_email": "sryker@usgs.gov"
+            },
+            {
+                "sipp_code": "WMA",
+                "name": "Water Resources Mission Area",
+                "url": "https://www.usgs.gov/mission-areas/water-resources",
+                "associate_director_name": "Don Cline, Ph.D.",
+                "associate_director_email": "dcline@usgs.gov"
+            },
+            {
+                "sipp_code": "NH",
+                "name": "Natural Hazards Mission Area",
+                "url": "https://www.usgs.gov/mission-areas/natural-hazards",
+                "associate_director_name": "Dave Applegate, Ph.D.",
+                "associate_director_email": "applegate@usgs.gov"
+            }
+        ]
+    }
+]

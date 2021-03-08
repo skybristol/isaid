@@ -259,6 +259,10 @@ def cached_source_data(source):
 
     return jsonify(cached_record)
 
+@app.route("/source_data", methods=["GET"])
+def data_source_route_doc():
+    return jsonify(get_source_data("data_sources"))
+
 @app.route("/source_data/<source>", methods=["GET"])
 def source_data(source):
     limit = 1000
