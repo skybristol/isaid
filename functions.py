@@ -717,13 +717,8 @@ def package_source_orcid_records(limit, offset):
                 record[new_field_mapping[k]] = list()
                 for item in [i for i in record["@reverse"][k] if "name" in i and i["name"] is not None]:
                     if "identifier" in item:
-                        item["identifiers"] = list()
                         if isinstance(item["identifier"], dict):
                             item.update({"identifier": [item["identifier"]]})
-                        for ident in item["identifier"]:
-                            s_ident = f'{ident["propertyID"]}:{ident["value"]}'
-                            item["identifiers"].append(s_ident)
-                        del item["identifier"]
                     record[new_field_mapping[k]].append(item)
             del record["@reverse"]
 
@@ -732,13 +727,8 @@ def package_source_orcid_records(limit, offset):
                 record.update({"alumniOf": [record["alumniOf"]]})
             for item in record["alumniOf"]:
                 if "identifier" in item:
-                    item["identifiers"] = list()
                     if isinstance(item["identifier"], dict):
                         item.update({"identifier": [item["identifier"]]})
-                    for ident in item["identifier"]:
-                        s_ident = f'{ident["propertyID"]}:{ident["value"]}'
-                        item["identifiers"].append(s_ident)
-                    del item["identifier"]
         else:
             record.update({"alumniOf": None})
 
@@ -750,10 +740,6 @@ def package_source_orcid_records(limit, offset):
                     item["identifiers"] = list()
                     if isinstance(item["identifier"], dict):
                         item.update({"identifier": [item["identifier"]]})
-                    for ident in item["identifier"]:
-                        s_ident = f'{ident["propertyID"]}:{ident["value"]}'
-                        item["identifiers"].append(s_ident)
-                    del item["identifier"]
         else:
             record.update({"affiliation": None})
 
