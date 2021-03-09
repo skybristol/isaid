@@ -743,7 +743,6 @@ def package_source_orcid_records(limit, offset):
                 record.update({"affiliation": [record["affiliation"]]})
             for item in record["affiliation"]:
                 if "identifier" in item:
-                    item["identifiers"] = list()
                     if isinstance(item["identifier"], dict):
                         item.update({"identifier": [item["identifier"]]})
                     for ident in item["identifier"]:
