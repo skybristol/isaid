@@ -719,6 +719,9 @@ def package_source_orcid_records(limit, offset):
                     if "identifier" in item:
                         if isinstance(item["identifier"], dict):
                             item.update({"identifier": [item["identifier"]]})
+                        for ident in item["identifier"]:
+                            item.update({f"identifier_{ident['propertyID']}": ident["value"]})
+                        del item["identifier"]
                     record[new_field_mapping[k]].append(item)
             del record["@reverse"]
 
@@ -729,6 +732,9 @@ def package_source_orcid_records(limit, offset):
                 if "identifier" in item:
                     if isinstance(item["identifier"], dict):
                         item.update({"identifier": [item["identifier"]]})
+                    for ident in item["identifier"]:
+                        item.update({f"identifier_{ident['propertyID']}": ident["value"]})
+                    del item["identifier"]
         else:
             record.update({"alumniOf": None})
 
@@ -740,6 +746,9 @@ def package_source_orcid_records(limit, offset):
                     item["identifiers"] = list()
                     if isinstance(item["identifier"], dict):
                         item.update({"identifier": [item["identifier"]]})
+                    for ident in item["identifier"]:
+                        item.update({f"identifier_{ident['propertyID']}": ident["value"]})
+                    del item["identifier"]
         else:
             record.update({"affiliation": None})
 
