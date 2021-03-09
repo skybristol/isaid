@@ -706,8 +706,10 @@ def package_source_orcid_records(limit, offset):
         record.update({
             "CreativeWorks": None,
             "Funders": None,
-            "link": record["@id"]
+            "link": None
         })
+        if "@id" in record:
+            record.update({"link": record["@id"]})
         
         if "@reverse" in record:
             for k,v in record["@reverse"].items():
@@ -717,7 +719,10 @@ def package_source_orcid_records(limit, offset):
                     record["@reverse"].update({k: v})
                 record[new_field_mapping[k]] = list()
                 for item in [i for i in record["@reverse"][k] if "name" in i and i["name"] is not None]:
-                    item["link"] = item["@id"]
+                    if "@id" in item:
+                        item["link"] = item["@id"]
+                    else:
+                        item["link"] = None
                     if "identifier" in item:
                         if isinstance(item["identifier"], dict):
                             item.update({"identifier": [item["identifier"]]})
