@@ -711,11 +711,11 @@ def package_source_orcid_records(limit, offset):
         if "@reverse" in record:
             for k,v in record["@reverse"].items():
                 if isinstance(v, dict):
-                    record.update({k: [v]})
+                    record["@reverse"].update({k: [v]})
                 elif isinstance(v, list):
-                    record.update({k: v})
+                    record["@reverse"].update({k: v})
                 record[new_field_mapping[k]] = list()
-                for item in [i for i in record[k] if "name" in i and i["name"] is not None]:
+                for item in [i for i in record["@reverse"][k] if "name" in i and i["name"] is not None]:
                     if "identifier" in item:
                         item["identifiers"] = list()
                         if isinstance(item["identifier"], dict):
