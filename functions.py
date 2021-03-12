@@ -14,6 +14,7 @@ from datetime import datetime
 from itertools import groupby
 import collections
 import json
+from pylinkedcmd import isaid
 
 people_index = 'entities'
 pubs_index = 'entities'
@@ -517,6 +518,16 @@ def get_source_data(source, limit=1000, offset=0):
 
         return source_a_recordset(recordset, source_meta)
 
+    elif source == "model_catalog":
+        recordset = package_source_scientific_models(source_meta)
+
+        return source_a_recordset(recordset, source_meta)
+
+    elif source == "sdc":
+        recordset = package_source_sdc(source_meta, limit, offset)
+
+        return source_a_recordset(recordset, source_meta)
+
 
 def sb_location(sb_doc):
     if "primaryLocation" not in sb_doc:
@@ -779,3 +790,33 @@ def package_source_doi_records(source_meta, limit, offset):
             del(record[key])
 
     return doi_records
+
+def package_source_scientific_models(source_meta):
+    sb_response = requests.get(source_meta["api_endpoint"]).json()
+
+    model_items = list()
+    for item in sb_response["items"]:
+        model = {
+            "title": item["title"],
+            "url": item["link"]["url"],
+            "description": item["summary"]
+        }
+
+        title_parts = item["title"].split(" - ")
+        if len(title_parts) > 1:
+            model["name"] = title_parts[0].strip()
+        else:
+            model["name"] = item["title"]
+
+        if "subTitle" in item:
+            model["alternateName"] = item["subTitle"]
+
+        model_items.append(model)
+
+    return model_items
+
+def package_source_sdc(source_meta, limit, offset):
+    source_records = search_client.get_index(source_meta["index"]).get_documents({'limit': limit, 'offset': offset})
+
+    return [isaid.dataset_node_from_sdc_item(item) for item in source_records]
+

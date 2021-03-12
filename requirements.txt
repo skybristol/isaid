@@ -14,3 +14,4 @@ Flask-Bootstrap==3.3.7.1
 flask-nav==0.6
 wordcloud==1.8.0
 meilisearch==0.13.0
+git+git://github.com/skybristol/pylinkedcmd@dev#egg=pylinkedcmd

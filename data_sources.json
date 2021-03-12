@@ -128,6 +128,17 @@
         "description": "The ScienceBase Directory provides a conduit to select information on organizational entities that may be of interest in some of our work. It uses only an internal identifier scheme at this point."
     },
     {
+        "source_id": "sdc",
+        "name": "Science Data Catalog",
+        "reference": "https://www.sciencebase.gov/directory/organizations",
+        "title": "USGS Science Data Catalog",
+        "source_title": "Science Data Catalog",
+        "index": "cache_sdc",
+        "id_prop": "_identifier",
+        "code_reference": "https://github.com/skybristol/pylinkedcmd/blob/dev/pylinkedcmd/sciencebase.py",
+        "description": "The USGS Science Data Catalog provides the official open data inventory for USGS. It amalgamates dataset metadata records from the different Trusted Digital Repositories across the USGS. For iSAID, the SDC represents a good source for vetted dataset information for important data assets of the USGS that have undergone necessary reviews and approvals."
+    },
+    {
         "source_id": "mission_areas",
         "name": "USGS Mission Areas",
         "reference": "https://www.usgs.gov/science/mission-areas",
@@ -176,5 +187,16 @@
                 "associate_director_email": "applegate@usgs.gov"
             }
         ]
+    },
+    {
+        "source_id": "model_catalog",
+        "name": "USGS Model Catalog",
+        "reference": "https://data.usgs.gov/modelcatalog",
+        "title": "USGS Model Catalog",
+        "source_title": "USGS Model Catalog",
+        "index": "NA",
+        "code_reference": "NA",
+        "api_endpoint": "https://www.sciencebase.gov/catalog/items?&max=200&folderId=5ed7d36182ce7e579c66e3be&format=json&fields=title,subTitle,summary,contacts,tags,webLinks,provenance,previewImage",
+        "description": "The USGS Model Catalog is a developing resource that identifies and documents scientific models produced by USGS or used extensively in our research. The catalog is currently founded as a set of ScienceBase Items that are further indexed and exposed through a web application. The model catalog source for iSAID provides a distillation of model catalog information tuned for incorporation into the iSAID graph."
     }
 ]
