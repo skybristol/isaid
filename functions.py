@@ -792,28 +792,7 @@ def package_source_doi_records(source_meta, limit, offset):
     return doi_records
 
 def package_source_scientific_models(source_meta):
-    sb_response = requests.get(source_meta["api_endpoint"]).json()
-
-    model_items = list()
-    for item in sb_response["items"]:
-        model = {
-            "title": item["title"],
-            "url": item["link"]["url"],
-            "description": item["summary"]
-        }
-
-        title_parts = item["title"].split(" - ")
-        if len(title_parts) > 1:
-            model["name"] = title_parts[0].strip()
-        else:
-            model["name"] = item["title"]
-
-        if "subTitle" in item:
-            model["alternateName"] = item["subTitle"]
-
-        model_items.append(model)
-
-    return model_items
+    return isaid.package_source_scientific_models()
 
 def package_source_sdc(source_meta, limit, offset):
     source_records = search_client.get_index(source_meta["index"]).get_documents({'limit': limit, 'offset': offset})
