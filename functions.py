@@ -489,8 +489,7 @@ def get_source_data(source, limit=1000, offset=0):
         return data_sources
 
     if source == "usgs_profiles":
-        recordset = package_source_usgs_profiles(limit, offset)
-
+        recordset = search_client.get_index('source_usgs_profiles').get_documents({'limit': limit, 'offset': offset})
         return source_a_recordset(recordset, source_meta)
 
     elif source == "mission_areas":
@@ -564,53 +563,6 @@ def doi_in_string(string):
         return
 
     return search.group()
-
-def package_source_usgs_profiles(limit, offset):
-    profile_inventory = search_client.get_index('cache_usgs_profile_inventory').search('', {'limit': 10000, 'attributesToRetrieve': ['profile','title']})['hits']
-    staff_profiles = search_client.get_index('cache_usgs_profiles').get_documents({'limit': limit, 'offset': offset})
-
-    identified_profiles = [i for i in staff_profiles if i["email"] is not None or i["orcid"] is not None]
-    identified_profiles.sort(key=lambda x:x['email'])
-    most_likely_profile = dict()
-    for k,v in groupby(identified_profiles,key=lambda x:x['email']):
-        profiles = list([(i["profile"],i["content_size"]) for i in v])
-        if len(profiles) > 1:
-            most_likely_profile[k] = sorted(profiles,key=lambda x:(-x[1],x[0]))[0][0]
-
-    for person in identified_profiles:
-        inventory_person = next((i for i in profile_inventory if i["profile"] == person["profile"]), None)
-        person.update({"title": inventory_person["title"]})
-
-    ignore_emails = [
-        None,
-        "ask@usgs.gov",
-        'usgs_yes@usgs.gov',
-        'astro_outreach@usgs.gov',
-        'gs-w-txpublicinfo@usgs.gov',
-        'library@usgs.gov'
-    ]
-    unique_emails = list(set([i["email"] for i in staff_profiles if i["email"] not in ignore_emails]))
-    unique_emails.sort()
-
-    unique_identified_profiles = list()
-    for email in unique_emails:
-        if email in most_likely_profile.keys():
-            unique_identified_profiles.append(next(i for i in identified_profiles if i["profile"] == most_likely_profile[email]))
-        else:
-            unique_identified_profiles.append(next(i for i in staff_profiles if i["email"] == email))
-
-    duplicate_orcids = [item for item, count in collections.Counter([i["orcid"] for i in unique_identified_profiles if i["orcid"] is not None]).items() if count > 1]
-    for profile in [i for i in unique_identified_profiles if i["orcid"] in duplicate_orcids]:
-        profile.update({"orcid": None})
-
-    for profile in [p for p in unique_identified_profiles if p["profile_image_url"] is not None and "placeholder-profile" in p["profile_image_url"]]:
-        profile.update({"profile_image_url": None})
-
-    for profile in [p for p in unique_identified_profiles if p["body_content_links"] is not None]:
-        for link in profile["body_content_links"]:
-            link.update({"doi": doi_in_string(link["link_href"])})
-
-    return unique_identified_profiles
 
 def package_source_sipp_centers(sipp_labels):
         sipp_center_records = search_client.get_index('cache_sipp_usgs_centers').get_documents({'limit': 500})
