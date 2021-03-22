@@ -518,8 +518,7 @@ def get_source_data(source, limit=1000, offset=0):
         return source_a_recordset(recordset, source_meta)
 
     elif source == "model_catalog":
-        recordset = package_source_scientific_models(source_meta)
-
+        recordset = search_client.get_index('source_model_catalog').get_documents({'limit': 1000})
         return source_a_recordset(recordset, source_meta)
 
     elif source == "sdc":
