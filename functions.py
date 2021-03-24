@@ -522,8 +522,8 @@ def get_source_data(source, limit=1000, offset=0):
         return source_a_recordset(recordset, source_meta)
 
     elif source == "sdc":
-        recordset = package_source_sdc(source_meta, limit, offset)
-
+        source_records = search_client.get_index(source_meta["index"]).get_documents({'limit': limit, 'offset': offset})
+        recordset = [isaid.dataset_node_from_sdc_item(item) for item in source_records]
         return source_a_recordset(recordset, source_meta)
 
 
@@ -741,12 +741,4 @@ def package_source_doi_records(source_meta, limit, offset):
             del(record[key])
 
     return doi_records
-
-def package_source_scientific_models(source_meta):
-    return isaid.package_source_scientific_models()
-
-def package_source_sdc(source_meta, limit, offset):
-    source_records = search_client.get_index(source_meta["index"]).get_documents({'limit': limit, 'offset': offset})
-
-    return [isaid.dataset_node_from_sdc_item(item) for item in source_records]
 
