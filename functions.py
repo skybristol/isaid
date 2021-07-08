@@ -18,8 +18,7 @@ from pylinkedcmd import isaid
 
 search_client = meilisearch.Client(
     os.environ["SEARCH_CLIENT"], 
-    "Son0f@Bitch"
-#    os.environ["SEARCH_CLIENT_KEY"]
+    os.environ["SEARCH_CLIENT_KEY"]
 )
 
 facets = search_client.get_index('entities').get_attributes_for_faceting()
