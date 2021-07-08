@@ -65,13 +65,9 @@
 
         {% for result in search_results["hits"] %}
             <div>
-                {{ result["instance_of"] }} : 
-                {% if "email" in result["identifiers"] %}
-                    <a href="/entity?id={{ result['identifiers']['email'] }}">{{ result["name"] }}</a>
-                {% elif "orcid" in result["identifiers"] %}
-                    <a href="/entity?id={{ result['identifiers']['orcid'] }}">{{ result["name"] }}</a>
-                {% elif "doi" in result["identifiers"] %}
-                    <a href="/entity?id={{ result['identifiers']['doi'] }}">{{ result["name"] }}</a>
+                {{ result["Entity Type"] }} : 
+                {% if "url" in result and result["url"] %}
+                    <a href="{{ result['url'] }}" target="_new">{{ result["name"] }}</a>
                 {% else %}
                     {{ result["name"] }}
                 {% endif %}

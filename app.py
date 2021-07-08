@@ -63,7 +63,7 @@ def search_entities():
     for arg in request.args:
         if arg == "q":
             query_string = escape(request.args["q"])
-        elif arg in entity_search_facets:
+        elif arg in facets:
             for item in request.args.getlist(arg):
                 facet_filters.append(f"{arg}:{item}")
             
@@ -85,7 +85,7 @@ def search_entities():
     )
 
     if "facetsDistribution" in search_results:
-        facets_in_search = [i for i in entity_search_facets if i in search_results["facetsDistribution"].keys()]
+        facets_in_search = [i for i in facets if i in search_results["facetsDistribution"].keys()]
 
         sorted_facets = dict()
         for facet, distribution in search_results["facetsDistribution"].items():

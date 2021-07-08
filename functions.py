@@ -16,33 +16,13 @@ import collections
 import json
 from pylinkedcmd import isaid
 
-people_index = 'entities'
-pubs_index = 'entities'
-claims_index = 'entity_claims'
-GOOGLE_DISCOVERY_URL = (
-    "https://accounts.google.com/.well-known/openid-configuration"
-)
-
 search_client = meilisearch.Client(
-    os.environ["MEILI_HTTP_ADDR"], 
-    os.environ["MEILI_KEY"]
+    os.environ["SEARCH_CLIENT"], 
+    "Son0f@Bitch"
+#    os.environ["SEARCH_CLIENT_KEY"]
 )
 
-facet_categories_people = search_client.get_index(people_index).get_attributes_for_faceting()
-
-entity_search_facets = [
-        "category",
-        "job title",
-        "usgs_organizational_units",
-        "educational affiliation",
-        "professional affiliation",
-        "employed by",
-        "has expertise",
-        "addresses subject",
-        "published in",
-        "funded by",
-        "participated in event"
-    ]
+facets = search_client.get_index('entities').get_attributes_for_faceting()
 
 reference_config = {
     "location": {
@@ -204,7 +184,7 @@ def requested_format(args, default="json"):
         else:
             return args["format"]
 
-def faceted_search(q=str(), facet_filters=None, return_facets=entity_search_facets, limit=20, offset=0):
+def faceted_search(q=str(), facet_filters=None, return_facets=facets, limit=20, offset=0):
     search_params = {
         'limit': limit,
         'offset': offset,
