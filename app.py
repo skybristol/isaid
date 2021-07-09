@@ -113,4 +113,19 @@ def search_entities():
             base_url_no_q=base_url_no_q
         )
 
+@app.route("/entity/<identifier>", methods=['GET'])
+def view_entity(identifier):
+    output_format = requested_format(request.args, default="html")
 
+    entity_doc = get_entity(identifier)
+
+    if entity_doc is None:
+        abort(404, description="Entity not found")
+
+    if output_format == "json":
+        return jsonify(entity_doc)
+    else:
+        return render_template(
+            "entity.html",
+            document = entity_doc
+        )

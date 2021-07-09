@@ -64,13 +64,21 @@
         <hr />
 
         {% for result in search_results["hits"] %}
-            <div>
+            <div style="margin-bottom: 10px;">
                 {{ result["Entity Type"] }} : 
                 {% if "url" in result and result["url"] %}
                     <a href="{{ result['url'] }}" target="_new">{{ result["name"] }}</a>
                 {% else %}
                     {{ result["name"] }}
                 {% endif %}
+                {% if "project_id" in result and result["project_id"] %}
+                    - {{ result["project_id"] }}
+                {% endif %}
+                <a href="/entity/{{ result['identifier'] }}?format=json">
+                    <img src="/static/images/info.png">
+                </a>
+                <br />
+                <<-- primary source: {{ result["source"] }}
             </div>
         {% endfor %}
 

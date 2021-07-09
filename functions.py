@@ -22,6 +22,7 @@ search_client = meilisearch.Client(
 )
 
 facets = search_client.get_index('entities').get_attributes_for_faceting()
+facets.sort()
 
 claims_sources = {
     "orcid": {
@@ -136,6 +137,35 @@ claims_sources = {
     },
 }
 
+attributesToRetrieve = [
+    'identifier',
+    'name',
+    'url',
+    'email',
+    'orcid',
+    'USGS Mission Areas',
+    'USGS Regions',
+    'USGS Science Centers',
+    'USGS Science Topics',
+    'Science Disciplines',
+    'Geologic Time Periods',
+    'USGS Institutional Structures',
+    'USGS Business Categories',
+    'Locations Addressed',
+    'USGS Job Titles',
+    'Entity Type',
+    'Climate Change Terms',
+    'description',
+    'source',
+    'image',
+    'active',
+    'type',
+    'status',
+    'year_published',
+    'doi'
+]
+
+
 def requested_format(args, default="json"):
     if "format" not in args:
         return default
@@ -149,7 +179,8 @@ def faceted_search(q=str(), facet_filters=None, return_facets=facets, limit=20, 
     search_params = {
         'limit': limit,
         'offset': offset,
-        'facetsDistribution': return_facets
+        'facetsDistribution': return_facets,
+        'attributesToRetrieve': attributesToRetrieve
     }
 
     if len(facet_filters) > 0:
@@ -161,6 +192,14 @@ def faceted_search(q=str(), facet_filters=None, return_facets=facets, limit=20, 
     )
 
     return search_results
+
+def get_entity(identifier):
+    try:
+        document = search_client.get_index('entities').get_document(identifier)
+    except Exception as e:
+        return
+
+    return {k:v for k,v in document.items() if k in attributesToRetrieve}
 
 def arg_stripper(args, leave_out, output_format="url_params"):
     stripped_args = {k:v for k,v in args.items() if k not in leave_out}
