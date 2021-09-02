@@ -21,7 +21,9 @@ search_client = meilisearch.Client(
     os.environ["SEARCH_CLIENT_KEY"]
 )
 
-facets = search_client.get_index('entities').get_attributes_for_faceting()
+search_index = 'entities_new'
+
+facets = search_client.get_index(search_index).get_attributes_for_faceting()
 facets.sort()
 
 claims_sources = {
@@ -186,7 +188,7 @@ def faceted_search(q=str(), facet_filters=None, return_facets=facets, limit=20, 
     if len(facet_filters) > 0:
         search_params["facetFilters"] = facet_filters
 
-    search_results = search_client.get_index('entities').search(
+    search_results = search_client.get_index(search_index).search(
         q,
         search_params
     )
@@ -195,7 +197,7 @@ def faceted_search(q=str(), facet_filters=None, return_facets=facets, limit=20, 
 
 def get_entity(identifier):
     try:
-        document = search_client.get_index('entities').get_document(identifier)
+        document = search_client.get_index(search_index).get_document(identifier)
     except Exception as e:
         return
 
