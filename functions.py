@@ -21,7 +21,7 @@ search_client = meilisearch.Client(
     os.environ["SEARCH_CLIENT_KEY"]
 )
 
-search_index = 'entities_new'
+search_index = 'entities'
 
 facets = search_client.get_index(search_index).get_attributes_for_faceting()
 facets.sort()
